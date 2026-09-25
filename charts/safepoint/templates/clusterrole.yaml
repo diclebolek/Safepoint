@@ -1,13 +1,10 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: backup-operator
-  namespace: backup-system
----
+{{- if .Values.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: backup-operator
+  name: {{ .Release.Name }}-backup-operator
+  labels:
+    app.kubernetes.io/name: safepoint
 rules:
   - apiGroups: ["backup.goproject.io"]
     resources: ["backupschedules", "backuprestores"]
@@ -19,10 +16,7 @@ rules:
     resources: ["backupschedules/finalizers", "backuprestores/finalizers"]
     verbs: ["update"]
   - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["pods"]
+    resources: ["secrets", "pods"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["batch"]
     resources: ["jobs"]
@@ -40,12 +34,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: backup-operator
+  name: {{ .Release.Name }}-backup-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: backup-operator
+  name: {{ .Release.Name }}-backup-operator
 subjects:
   - kind: ServiceAccount
-    name: backup-operator
-    namespace: backup-system
+    name: {{ .Values.serviceAccount.name }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

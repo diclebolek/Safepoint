@@ -1,0 +1,66 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Backup successes",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(safepoint_backup_success_total[5m])) by (engine)",
+          "legendFormat": "{{engine}}"
+        }
+      ]
+    },
+    {
+      "title": "Backup failures",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(safepoint_backup_failure_total[5m])) by (engine)",
+          "legendFormat": "{{engine}}"
+        }
+      ]
+    },
+    {
+      "title": "Backup duration (p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(safepoint_backup_duration_seconds_bucket[5m])) by (le, engine))",
+          "legendFormat": "{{engine}}"
+        }
+      ]
+    },
+    {
+      "title": "Restore successes",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "sum(safepoint_restore_success_total)", "legendFormat": "restores" }
+      ]
+    },
+    {
+      "title": "Restore failures",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "sum(safepoint_restore_failure_total)", "legendFormat": "failures" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["safepoint", "backup", "kubernetes"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Safepoint Backups",
+  "uid": "safepoint-backups",
+  "version": 1
+}

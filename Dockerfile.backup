@@ -1,0 +1,11 @@
+# syntax=docker/dockerfile:1
+FROM alpine:3.20
+RUN apk add --no-cache \
+      bash curl ca-certificates gzip \
+      postgresql16-client \
+      redis \
+      mariadb-client \
+    && adduser -D -u 65532 nonroot
+USER 65532:65532
+WORKDIR /tmp
+ENTRYPOINT ["/bin/bash"]

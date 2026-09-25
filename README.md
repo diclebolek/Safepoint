@@ -420,7 +420,49 @@ Safepoint/
 
 ---
 
-## Development & CI
+## Dashboard (Web UI)
+
+```powershell
+docker build -t safepoint-dashboard:dev -f Dockerfile.dashboard .
+kubectl apply -f config/dashboard/deployment.yaml
+kubectl -n backup-system port-forward svc/safepoint-dashboard 8088:8088
+# open http://127.0.0.1:8088
+```
+
+## Restore
+
+```powershell
+# copy lastObjectKey from a successful BackupSchedule
+kubectl -n demo get bks shop-db-backup -o jsonpath="{.status.lastObjectKey}{\"\n\"}"
+# edit config/samples/backuprestore.yaml then:
+kubectl apply -f config/crd/bases/backup.goproject.io_backuprestores.yaml
+kubectl apply -f config/samples/backuprestore.yaml
+kubectl -n demo get bkr -w
+```
+
+## Helm
+
+See [`charts/safepoint/README.md`](charts/safepoint/README.md).
+
+## Hardened backup image
+
+```powershell
+docker build -t safepoint-backup:dev -f Dockerfile.backup .
+```
+
+Jobs default to this image (`safepoint-backup:dev`) so dump tools are preinstalled.
+
+## Metrics
+
+Operator exposes Prometheus metrics on `:8080/metrics`:
+
+- `safepoint_backup_success_total`
+- `safepoint_backup_failure_total`
+- `safepoint_backup_duration_seconds`
+- `safepoint_restore_success_total`
+- `safepoint_restore_failure_total`
+
+Grafana dashboard JSON: `charts/safepoint/dashboards/safepoint.json`.
 
 ```powershell
 make tidy
@@ -444,10 +486,12 @@ GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), build, cert sm
 - [x] Engines: Postgres, MySQL, Redis, MongoDB  
 - [x] Validating webhook + demo stack  
 - [x] Unit tests + GitHub Actions  
-- [ ] envtest suite  
-- [ ] Hardened backup image  
-- [ ] Prometheus metrics  
-- [ ] Helm chart  
+- [x] envtest suite (`-tags=envtest`, CI)  
+- [x] Hardened backup image (`Dockerfile.backup`)  
+- [x] Prometheus metrics + Grafana dashboard  
+- [x] Helm chart (`charts/safepoint`)  
+- [x] Restore CRD (`BackupRestore`)  
+- [x] Web UI dashboard (`cmd/dashboard`)  
 
 ---
 

@@ -1,0 +1,56 @@
+replicaCount: 1
+
+image:
+  repository: backup-operator
+  tag: dev
+  pullPolicy: IfNotPresent
+
+backupImage: safepoint-backup:dev
+
+nameOverride: ""
+fullnameOverride: "safepoint"
+
+serviceAccount:
+  create: true
+  name: backup-operator
+
+rbac:
+  create: true
+
+webhook:
+  enabled: true
+  port: 9443
+  # Leave empty to use certs from secret created by scripts/gen-webhook-certs.ps1
+  certSecretName: webhook-server-cert
+
+metrics:
+  enabled: true
+  port: 8080
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+
+dashboard:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: safepoint-dashboard
+    tag: dev
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8088
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+leaderElect: true
+
+# Install CRDs with the chart
+crds:
+  install: true

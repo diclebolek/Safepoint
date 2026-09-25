@@ -1,0 +1,17 @@
+apiVersion: v2
+name: safepoint
+description: Kubernetes-native database backup operator with policy enforcement
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
+keywords:
+  - kubernetes
+  - backup
+  - operator
+  - postgres
+  - redis
+home: https://github.com/diclebolek/Safepoint
+sources:
+  - https://github.com/diclebolek/Safepoint
+maintainers:
+  - name: diclebolek

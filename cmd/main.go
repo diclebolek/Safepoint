@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"flag"
@@ -17,6 +17,7 @@ import (
 	backupv1 "github.com/diclebolek/Safepoint/api/v1"
 	"github.com/diclebolek/Safepoint/internal/backup"
 	"github.com/diclebolek/Safepoint/internal/controller"
+	_ "github.com/diclebolek/Safepoint/internal/metrics"
 	"github.com/diclebolek/Safepoint/internal/runner"
 	backupwebhook "github.com/diclebolek/Safepoint/internal/webhook"
 )
@@ -83,6 +84,14 @@ func main() {
 		StoreFor: controller.DefaultStoreFor(mgr.GetClient()),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "BackupSchedule")
+		os.Exit(1)
+	}
+
+	if err := (&controller.BackupRestoreReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "BackupRestore")
 		os.Exit(1)
 	}
 

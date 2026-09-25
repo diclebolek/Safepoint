@@ -115,3 +115,102 @@ func (in *BackupScheduleStatus) DeepCopy() *BackupScheduleStatus {
 	in.DeepCopyInto(out)
 	return out
 }
+
+// DeepCopyInto copies the receiver into out.
+func (in *BackupRestore) DeepCopyInto(out *BackupRestore) {
+	*out = *in
+	out.TypeMeta = in.TypeMeta
+	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	in.Spec.DeepCopyInto(&out.Spec)
+	in.Status.DeepCopyInto(&out.Status)
+}
+
+// DeepCopy creates a new BackupRestore.
+func (in *BackupRestore) DeepCopy() *BackupRestore {
+	if in == nil {
+		return nil
+	}
+	out := new(BackupRestore)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyObject implements runtime.Object.
+func (in *BackupRestore) DeepCopyObject() runtime.Object {
+	if c := in.DeepCopy(); c != nil {
+		return c
+	}
+	return nil
+}
+
+// DeepCopyInto copies the receiver into out.
+func (in *BackupRestoreList) DeepCopyInto(out *BackupRestoreList) {
+	*out = *in
+	out.TypeMeta = in.TypeMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]BackupRestore, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+}
+
+// DeepCopy creates a new BackupRestoreList.
+func (in *BackupRestoreList) DeepCopy() *BackupRestoreList {
+	if in == nil {
+		return nil
+	}
+	out := new(BackupRestoreList)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyObject implements runtime.Object.
+func (in *BackupRestoreList) DeepCopyObject() runtime.Object {
+	if c := in.DeepCopy(); c != nil {
+		return c
+	}
+	return nil
+}
+
+// DeepCopyInto copies the receiver into out.
+func (in *BackupRestoreSpec) DeepCopyInto(out *BackupRestoreSpec) {
+	*out = *in
+	out.Destination = in.Destination
+	if in.ActiveDeadlineSeconds != nil {
+		in, out := &in.ActiveDeadlineSeconds, &out.ActiveDeadlineSeconds
+		*out = new(int64)
+		**out = **in
+	}
+}
+
+// DeepCopy creates a new BackupRestoreSpec.
+func (in *BackupRestoreSpec) DeepCopy() *BackupRestoreSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(BackupRestoreSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto copies the receiver into out.
+func (in *BackupRestoreStatus) DeepCopyInto(out *BackupRestoreStatus) {
+	*out = *in
+	if in.CompletionTime != nil {
+		in, out := &in.CompletionTime, &out.CompletionTime
+		*out = (*in).DeepCopy()
+	}
+}
+
+// DeepCopy creates a new BackupRestoreStatus.
+func (in *BackupRestoreStatus) DeepCopy() *BackupRestoreStatus {
+	if in == nil {
+		return nil
+	}
+	out := new(BackupRestoreStatus)
+	in.DeepCopyInto(out)
+	return out
+}

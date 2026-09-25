@@ -1,0 +1,72 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: backuprestores.backup.goproject.io
+spec:
+  group: backup.goproject.io
+  names:
+    kind: BackupRestore
+    listKind: BackupRestoreList
+    plural: backuprestores
+    shortNames: [bkr]
+    singular: backuprestore
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Engine
+          type: string
+          jsonPath: .spec.engine
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion: { type: string }
+            kind: { type: string }
+            metadata: { type: object }
+            spec:
+              type: object
+              required: [secretRef, objectKey, destination]
+              properties:
+                engine:
+                  type: string
+                  enum: [postgres, mysql, redis, mongodb]
+                  default: postgres
+                secretRef: { type: string }
+                objectKey: { type: string }
+                backupImage: { type: string }
+                activeDeadlineSeconds:
+                  type: integer
+                  format: int64
+                destination:
+                  type: object
+                  required: [endpoint, bucket, credentialsSecretRef]
+                  properties:
+                    endpoint: { type: string }
+                    bucket: { type: string }
+                    prefix: { type: string }
+                    region: { type: string }
+                    credentialsSecretRef: { type: string }
+                    useSSL: { type: boolean }
+            status:
+              type: object
+              properties:
+                phase: { type: string }
+                message: { type: string }
+                jobName: { type: string }
+                completionTime:
+                  type: string
+                  format: date-time
+                observedGeneration:
+                  type: integer
+                  format: int64

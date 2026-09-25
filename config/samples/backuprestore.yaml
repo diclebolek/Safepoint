@@ -1,0 +1,15 @@
+apiVersion: backup.goproject.io/v1
+kind: BackupRestore
+metadata:
+  name: shop-db-restore
+  namespace: demo
+spec:
+  engine: postgres
+  secretRef: shop-postgres-credentials
+  # Replace with a real lastObjectKey from: kubectl -n demo get bks shop-db-backup -o jsonpath='{.status.lastObjectKey}'
+  objectKey: demo/shop-db-backup/example.dump.gz
+  destination:
+    endpoint: minio.demo.svc.cluster.local:9000
+    bucket: db-backups
+    credentialsSecretRef: minio-credentials
+    useSSL: false

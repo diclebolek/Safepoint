@@ -19,6 +19,7 @@ import (
 
 	backupv1 "github.com/diclebolek/Safepoint/api/v1"
 	"github.com/diclebolek/Safepoint/internal/backup"
+	"github.com/diclebolek/Safepoint/internal/metrics"
 	"github.com/diclebolek/Safepoint/internal/runner"
 	"github.com/diclebolek/Safepoint/internal/storage"
 )
@@ -185,6 +186,12 @@ func (r *BackupScheduleReconciler) observeRunningJob(
 
 	case runner.JobSucceeded:
 		logger.Info("backup succeeded", "job", result.JobName, "objectKey", result.ObjectKey)
+		engine := string(schedule.EffectiveEngine())
+		metrics.BackupSuccess.WithLabelValues(schedule.Namespace, schedule.Name, engine).Inc()
+		if schedule.Status.LastBackupTime != nil {
+			metrics.BackupDuration.WithLabelValues(schedule.Namespace, schedule.Name, engine).
+				Observe(now.Sub(schedule.Status.LastBackupTime.Time).Seconds())
+		}
 		if err := r.applyRetention(ctx, schedule); err != nil {
 			logger.Error(err, "retention cleanup failed")
 		}
@@ -209,6 +216,7 @@ func (r *BackupScheduleReconciler) observeRunningJob(
 
 	case runner.JobFailed:
 		logger.Info("backup failed", "job", result.JobName)
+		metrics.BackupFailure.WithLabelValues(schedule.Namespace, schedule.Name, string(schedule.EffectiveEngine())).Inc()
 		next := cronSched.Next(now)
 		_, statusErr := r.patchStatus(ctx, schedule, func(s *backupv1.BackupSchedule) {
 			s.Status.Phase = backupv1.BackupPhaseFailed

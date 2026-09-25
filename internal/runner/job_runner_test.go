@@ -81,7 +81,7 @@ func TestCreateJobBuildsPostgresJob(t *testing.T) {
 	if err := c.Get(context.Background(), key, &job); err != nil {
 		t.Fatal(err)
 	}
-	if job.Spec.Template.Spec.Containers[0].Image != "postgres:16-alpine" {
+	if job.Spec.Template.Spec.Containers[0].Image != backup.DefaultBackupImage {
 		t.Fatalf("image=%s", job.Spec.Template.Spec.Containers[0].Image)
 	}
 }

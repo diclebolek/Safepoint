@@ -82,7 +82,7 @@ func TestPostgresValidateAndBuildJob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if job.Spec.Template.Spec.Containers[0].Image != "postgres:16-alpine" {
+	if job.Spec.Template.Spec.Containers[0].Image != backup.DefaultBackupImage {
 		t.Fatalf("unexpected image %s", job.Spec.Template.Spec.Containers[0].Image)
 	}
 }
