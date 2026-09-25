@@ -6,8 +6,8 @@ metadata:
 spec:
   engine: postgres
   secretRef: shop-postgres-credentials
-  # Replace with a real lastObjectKey from: kubectl -n demo get bks shop-db-backup -o jsonpath='{.status.lastObjectKey}'
-  objectKey: demo/shop-db-backup/example.dump.gz
+  # Fill from: kubectl -n demo get bks shop-db-backup -o jsonpath="{.status.lastObjectKey}{'\n'}"
+  objectKey: REPLACE_WITH_LAST_OBJECT_KEY
   destination:
     endpoint: minio.demo.svc.cluster.local:9000
     bucket: db-backups

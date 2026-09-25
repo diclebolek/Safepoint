@@ -222,6 +222,8 @@ kubectl apply -f config/demo/minio.yaml
 kubectl apply -f config/demo/backupschedules.yaml
 kubectl apply -f config/demo/postgres.yaml
 kubectl apply -f config/demo/redis.yaml
+kubectl apply -f config/demo/grafana-dashboard-configmap.yaml
+kubectl apply -f config/demo/observability.yaml
 
 # Create the S3 bucket once
 kubectl -n demo exec deploy/minio -- sh -c "echo 's3.bucket.create -name db-backups' | weed shell -master=localhost:9333"
@@ -238,6 +240,18 @@ kubectl -n demo describe bks shop-db-backup
 ```
 
 Demo schedules run every few minutes. When a Job succeeds, `status.phase` becomes `Succeeded` and `lastObjectKey` shows the uploaded object.
+
+### Metrics + Grafana (demo)
+
+```powershell
+kubectl apply -f config/metrics/service.yaml
+kubectl apply -f config/demo/grafana-dashboard-configmap.yaml
+kubectl apply -f config/demo/observability.yaml
+kubectl -n demo port-forward svc/grafana 3000:3000
+# open http://127.0.0.1:3000  (admin/admin) → folder Safepoint
+kubectl -n demo port-forward svc/prometheus 9090:9090
+# open http://127.0.0.1:9090 → query safepoint_backup_success_total
+```
 
 ### One-liner via Makefile (after image build)
 
@@ -445,7 +459,7 @@ Jobs default to this image (`safepoint-backup:dev`) so dump tools are preinstall
 
 ## Metrics
 
-Operator exposes Prometheus metrics on `:8080/metrics`:
+Operator exposes Prometheus metrics on `:8080/metrics` (Service `backup-operator-metrics`):
 
 - `safepoint_backup_success_total`
 - `safepoint_backup_failure_total`
@@ -453,7 +467,8 @@ Operator exposes Prometheus metrics on `:8080/metrics`:
 - `safepoint_restore_success_total`
 - `safepoint_restore_failure_total`
 
-Grafana dashboard JSON: `charts/safepoint/dashboards/safepoint.json`.
+Demo stack: Prometheus + Grafana under `config/demo/observability.yaml`.
+Grafana dashboard JSON: `charts/safepoint/dashboards/safepoint.json` (also applied as ConfigMap in demo).
 
 ## Development & CI
 

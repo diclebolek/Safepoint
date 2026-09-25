@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backup-operator-metrics
+  namespace: backup-system
+  labels:
+    app.kubernetes.io/name: backup-operator
+    app.kubernetes.io/component: metrics
+spec:
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: backup-operator

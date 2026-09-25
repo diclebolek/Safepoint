@@ -40,9 +40,12 @@ demo:
 	kubectl apply -f config/demo/backupschedules.yaml
 	kubectl apply -f config/demo/postgres.yaml
 	kubectl apply -f config/demo/redis.yaml
+	kubectl apply -f config/demo/grafana-dashboard-configmap.yaml
+	kubectl apply -f config/demo/observability.yaml
 
 deploy: install-crd install-rbac webhook-certs docker-build-all
 	kubectl apply -f config/webhook/service.yaml
+	kubectl apply -f config/metrics/service.yaml
 	kubectl apply -f config/manager/deployment.yaml
 
 sample:
