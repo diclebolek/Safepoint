@@ -1,0 +1,38 @@
+apiVersion: backup.goproject.io/v1
+kind: BackupSchedule
+metadata:
+  name: shop-db-backup
+  namespace: default
+spec:
+  engine: postgres
+  databaseRef: shop-postgres
+  secretRef: shop-postgres-credentials
+  schedule: "*/5 * * * *" # every 5 minutes (demo)
+  retentionDays: 7
+  suspend: false
+  destination:
+    endpoint: minio.minio.svc.cluster.local:9000
+    bucket: db-backups
+    prefix: postgres/shop
+    region: us-east-1
+    credentialsSecretRef: minio-credentials
+    useSSL: false
+---
+apiVersion: backup.goproject.io/v1
+kind: BackupSchedule
+metadata:
+  name: shop-redis-backup
+  namespace: default
+spec:
+  engine: redis
+  databaseRef: shop-redis
+  secretRef: shop-redis-credentials
+  schedule: "*/10 * * * *"
+  retentionDays: 3
+  destination:
+    endpoint: minio.minio.svc.cluster.local:9000
+    bucket: db-backups
+    prefix: redis/shop
+    region: us-east-1
+    credentialsSecretRef: minio-credentials
+    useSSL: false

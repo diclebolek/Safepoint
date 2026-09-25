@@ -1,0 +1,31 @@
+# Example workload that the validating webhook will protect (Phase 3).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shop-postgres
+  namespace: default
+  labels:
+    backup.goproject.io/require-backup: "true"
+  annotations:
+    backup.goproject.io/database-name: shop-postgres
+spec:
+  containers:
+    - name: postgres
+      image: postgres:16-alpine
+      env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: shop-postgres-credentials
+              key: password
+      ports:
+        - containerPort: 5432
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+      securityContext:
+        allowPrivilegeEscalation: false

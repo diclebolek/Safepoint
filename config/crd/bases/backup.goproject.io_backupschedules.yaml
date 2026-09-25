@@ -1,0 +1,142 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: backupschedules.backup.goproject.io
+spec:
+  group: backup.goproject.io
+  names:
+    kind: BackupSchedule
+    listKind: BackupScheduleList
+    plural: backupschedules
+    shortNames:
+      - bks
+    singular: backupschedule
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Engine
+          type: string
+          jsonPath: .spec.engine
+        - name: Database
+          type: string
+          jsonPath: .spec.databaseRef
+        - name: Schedule
+          type: string
+          jsonPath: .spec.schedule
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Last Backup
+          type: date
+          jsonPath: .status.lastBackupTime
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              required:
+                - databaseRef
+                - secretRef
+                - schedule
+                - destination
+              properties:
+                engine:
+                  type: string
+                  enum: [postgres, mysql, redis, mongodb]
+                  default: postgres
+                databaseRef:
+                  type: string
+                  minLength: 1
+                secretRef:
+                  type: string
+                schedule:
+                  type: string
+                  minLength: 1
+                retentionDays:
+                  type: integer
+                  format: int32
+                  minimum: 1
+                  default: 7
+                backupImage:
+                  type: string
+                activeDeadlineSeconds:
+                  type: integer
+                  format: int64
+                  default: 1800
+                suspend:
+                  type: boolean
+                destination:
+                  type: object
+                  required:
+                    - endpoint
+                    - bucket
+                    - credentialsSecretRef
+                  properties:
+                    endpoint:
+                      type: string
+                    bucket:
+                      type: string
+                    prefix:
+                      type: string
+                    region:
+                      type: string
+                      default: us-east-1
+                    credentialsSecretRef:
+                      type: string
+                    useSSL:
+                      type: boolean
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                lastBackupTime:
+                  type: string
+                  format: date-time
+                nextBackupTime:
+                  type: string
+                  format: date-time
+                lastObjectKey:
+                  type: string
+                lastJobName:
+                  type: string
+                message:
+                  type: string
+                observedGeneration:
+                  type: integer
+                  format: int64
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    required: [type, status, lastTransitionTime, reason, message]
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      observedGeneration:
+                        type: integer
+                        format: int64
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                      reason:
+                        type: string
+                      message:
+                        type: string

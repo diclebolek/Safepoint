@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-credentials
+  namespace: demo
+type: Opaque
+stringData:
+  accessKey: minioadmin
+  secretKey: minioadmin
+---
+apiVersion: backup.goproject.io/v1
+kind: BackupSchedule
+metadata:
+  name: shop-db-backup
+  namespace: demo
+spec:
+  engine: postgres
+  databaseRef: shop-postgres
+  secretRef: shop-postgres-credentials
+  schedule: "*/5 * * * *"
+  retentionDays: 7
+  destination:
+    endpoint: minio.demo.svc.cluster.local:9000
+    bucket: db-backups
+    prefix: postgres/shop
+    region: us-east-1
+    credentialsSecretRef: minio-credentials
+    useSSL: false
+---
+apiVersion: backup.goproject.io/v1
+kind: BackupSchedule
+metadata:
+  name: shop-redis-backup
+  namespace: demo
+spec:
+  engine: redis
+  databaseRef: shop-redis
+  secretRef: shop-redis-credentials
+  schedule: "*/10 * * * *"
+  retentionDays: 3
+  destination:
+    endpoint: minio.demo.svc.cluster.local:9000
+    bucket: db-backups
+    prefix: redis/shop
+    region: us-east-1
+    credentialsSecretRef: minio-credentials
+    useSSL: false

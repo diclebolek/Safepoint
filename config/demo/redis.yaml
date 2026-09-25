@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: shop-redis-credentials
+  namespace: demo
+type: Opaque
+stringData:
+  host: shop-redis.demo.svc.cluster.local
+  port: "6379"
+  password: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-redis
+  namespace: demo
+  labels:
+    app: shop-redis
+    backup.goproject.io/require-backup: "true"
+  annotations:
+    backup.goproject.io/database-name: shop-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shop-redis
+  template:
+    metadata:
+      labels:
+        app: shop-redis
+        backup.goproject.io/require-backup: "true"
+      annotations:
+        backup.goproject.io/database-name: shop-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          args: ["redis-server", "--save", "60", "1"]
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-redis
+  namespace: demo
+spec:
+  selector:
+    app: shop-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
