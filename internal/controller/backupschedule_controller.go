@@ -1,4 +1,4 @@
-package controller
+﻿package controller
 
 import (
 	"context"
@@ -127,6 +127,20 @@ func (r *BackupScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, statusErr
 		}
 		return ctrl.Result{RequeueAfter: time.Minute}, nil
+	}
+
+	// CreateJob may return an already-existing Job's terminal state.
+	if result.Outcome == runner.JobSucceeded || result.Outcome == runner.JobFailed {
+		_, _ = r.patchStatus(ctx, &schedule, func(s *backupv1.BackupSchedule) {
+			s.Status.Phase = backupv1.BackupPhaseRunning
+			s.Status.LastJobName = result.JobName
+			s.Status.LastObjectKey = result.ObjectKey
+			s.Status.ObservedGeneration = s.Generation
+		})
+		if err := r.Get(ctx, req.NamespacedName, &schedule); err != nil {
+			return ctrl.Result{}, err
+		}
+		return r.observeRunningJob(ctx, &schedule, cronSched, now)
 	}
 
 	_, statusErr := r.patchStatus(ctx, &schedule, func(s *backupv1.BackupSchedule) {

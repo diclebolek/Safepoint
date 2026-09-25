@@ -1,4 +1,4 @@
-# Safepoint
+﻿# Safepoint
 
 **Kubernetes-native database backup operator with policy enforcement.**
 
@@ -189,6 +189,7 @@ Docker Desktop Kubernetes will use this local image tag (`imagePullPolicy: IfNot
 
 ```powershell
 kubectl apply -f config/crd/bases/backup.goproject.io_backupschedules.yaml
+kubectl create namespace backup-system --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f config/rbac/role.yaml
 ```
 
@@ -210,7 +211,9 @@ kubectl -n backup-system get pods -w
 
 Wait until the pod is `Running` / Ready.
 
-### 6) Deploy MinIO + sample schedules + databases
+### 6) Deploy object storage + sample schedules + databases
+
+The demo Service is still named `minio`, but the image is **SeaweedFS** (S3-compatible). Use this when MinIO images cannot be pulled.
 
 **Order matters** (webhook is fail-closed): schedules **before** protected DBs.
 
@@ -219,23 +222,28 @@ kubectl apply -f config/demo/minio.yaml
 kubectl apply -f config/demo/backupschedules.yaml
 kubectl apply -f config/demo/postgres.yaml
 kubectl apply -f config/demo/redis.yaml
+
+# Create the S3 bucket once
+kubectl -n demo exec deploy/minio -- sh -c "echo 's3.bucket.create -name db-backups' | weed shell -master=localhost:9333"
 ```
 
 ### 7) Verify
 
 ```powershell
+kubectl -n backup-system get pods
+kubectl -n demo get pods
 kubectl -n demo get bks
 kubectl -n demo get jobs
-kubectl -n backup-system logs deploy/backup-operator --tail=100
+kubectl -n demo describe bks shop-db-backup
 ```
 
-Demo schedules run every few minutes. When a Job succeeds, `status.phase` becomes `Succeeded` and `lastObjectKey` points at an object in MinIO.
+Demo schedules run every few minutes. When a Job succeeds, `status.phase` becomes `Succeeded` and `lastObjectKey` shows the uploaded object.
 
 ### One-liner via Makefile (after image build)
 
 ```powershell
 make deploy    # CRD, RBAC, certs, operator
-make demo      # MinIO + schedules + Postgres + Redis
+make demo      # storage + schedules + Postgres + Redis
 ```
 
 ### Local operator without webhook (dev only)

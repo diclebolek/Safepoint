@@ -230,17 +230,28 @@ func targetEnv(t Target) []corev1.EnvVar {
 	}
 }
 
-// uploadScript installs mc (if missing) and uploads FILE_PATH to OBJECT_KEY.
+// uploadScript uploads FILE_PATH to OBJECT_KEY.
+// Prefer curl PUT (works with SeaweedFS / many S3 gateways); fall back to mc if available.
 const uploadScript = `
-install_mc() {
-  if command -v mc >/dev/null 2>&1; then MC=$(command -v mc); return 0; fi
-  echo "downloading minio client"
-  curl -fsSL -o /tmp/mc https://dl.min.io/client/mc/release/linux-amd64/mc
-  chmod +x /tmp/mc
-  MC=/tmp/mc
+upload_with_curl() {
+  curl -fsS -X PUT \
+    -H "Content-Type: application/octet-stream" \
+    --data-binary @"${FILE_PATH}" \
+    "${S3_SCHEME}://${S3_ENDPOINT}/${S3_BUCKET}/${OBJECT_KEY}"
 }
-install_mc
-"$MC" alias set backup "${S3_SCHEME}://${S3_ENDPOINT}" "${S3_ACCESS_KEY}" "${S3_SECRET_KEY}" --api S3v4
-"$MC" cp "${FILE_PATH}" "backup/${S3_BUCKET}/${OBJECT_KEY}"
-echo "uploaded ${OBJECT_KEY}"
+upload_with_mc() {
+  if ! command -v mc >/dev/null 2>&1; then
+    return 1
+  fi
+  mc alias set backup "${S3_SCHEME}://${S3_ENDPOINT}" "${S3_ACCESS_KEY}" "${S3_SECRET_KEY}" --api S3v4
+  mc cp "${FILE_PATH}" "backup/${S3_BUCKET}/${OBJECT_KEY}"
+}
+if upload_with_curl; then
+  echo "uploaded ${OBJECT_KEY} via curl"
+elif upload_with_mc; then
+  echo "uploaded ${OBJECT_KEY} via mc"
+else
+  echo "upload failed: curl PUT and mc both unavailable/failed" >&2
+  exit 1
+fi
 `

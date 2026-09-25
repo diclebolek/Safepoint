@@ -3,7 +3,6 @@ kind: Namespace
 metadata:
   name: demo
 ---
-# MinIO — S3-compatible object storage for backups
 apiVersion: v1
 kind: Secret
 metadata:
@@ -11,9 +10,11 @@ metadata:
   namespace: demo
 type: Opaque
 stringData:
-  accessKey: minioadmin
-  secretKey: minioadmin
+  # SeaweedFS default S3 credentials (dev only)
+  accessKey: any
+  secretKey: any
 ---
+# SeaweedFS all-in-one (master + volume + filer + S3 on :8333)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,25 +33,20 @@ spec:
         app: minio
     spec:
       containers:
-        - name: minio
-          image: quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
-          args: ["server", "/data", "--console-address", ":9001"]
-          env:
-            - name: MINIO_ROOT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: minio-credentials
-                  key: accessKey
-            - name: MINIO_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: minio-credentials
-                  key: secretKey
+        - name: seaweedfs
+          image: chrislusf/seaweedfs:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "server"
+            - "-dir=/data"
+            - "-s3"
+            - "-s3.port=9000"
+            - "-master.volumeSizeLimitMB=100"
           ports:
             - containerPort: 9000
               name: s3
-            - containerPort: 9001
-              name: console
+            - containerPort: 9333
+              name: master
           volumeMounts:
             - name: data
               mountPath: /data
@@ -61,6 +57,11 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 5
       volumes:
         - name: data
           emptyDir: {}
@@ -77,39 +78,34 @@ spec:
     - name: s3
       port: 9000
       targetPort: 9000
-    - name: console
-      port: 9001
-      targetPort: 9001
 ---
-# Create db-backups bucket once MinIO is up (Job)
+# Create bucket via SeaweedFS S3 API (awscli-compatible curl/sigv4 is heavy;
+# filer mkdir via weed shell is simpler for demo).
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: minio-create-bucket
   namespace: demo
 spec:
-  ttlSecondsAfterFinished: 120
+  ttlSecondsAfterFinished: 180
+  backoffLimit: 8
   template:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: mc
-          image: quay.io/minio/mc:RELEASE.2024-11-17T19-35-56Z
-          env:
-            - name: MINIO_ROOT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: minio-credentials
-                  key: accessKey
-            - name: MINIO_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: minio-credentials
-                  key: secretKey
-          command:
-            - /bin/sh
-            - -ec
+        - name: create-bucket
+          image: chrislusf/seaweedfs:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
             - |
-              until mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"; do sleep 2; done
-              mc mb --ignore-existing local/db-backups
-              mc ls local/db-backups
+              echo "waiting for s3..."
+              for i in $(seq 1 60); do
+                if wget -q -O- http://minio:9000/ >/dev/null 2>&1 || true; then
+                  break
+                fi
+                sleep 2
+              done
+              # SeaweedFS creates buckets on first PUT when configured; ensure via weed shell filer path
+              echo 's3.bucket.create -name db-backups' | weed shell -master=minio:9333 || true
+              echo "bucket ensure attempted"

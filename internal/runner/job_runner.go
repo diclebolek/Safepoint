@@ -121,6 +121,9 @@ func (r *JobRunner) CreateJob(ctx context.Context, schedule *backupv1.BackupSche
 	}
 
 	if err := r.Client.Create(ctx, job); err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return r.GetJob(ctx, schedule.Namespace, job.Name)
+		}
 		return Result{}, fmt.Errorf("create job: %w", err)
 	}
 

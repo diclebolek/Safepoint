@@ -1,4 +1,4 @@
-# caBundle is injected by scripts/gen-webhook-certs.ps1 (base64 DER of CA cert).
+# caBundle is injected by scripts/gen-webhook-certs.ps1
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -22,6 +22,12 @@ webhooks:
     sideEffects: None
     timeoutSeconds: 10
     matchPolicy: Equivalent
+    # Do not intercept the operator's own namespace (avoids install chicken-egg).
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["backup-system", "kube-system", "kube-public"]
   - name: deployment.backup.goproject.io
     admissionReviewVersions: ["v1"]
     clientConfig:
@@ -40,3 +46,8 @@ webhooks:
     sideEffects: None
     timeoutSeconds: 10
     matchPolicy: Equivalent
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["backup-system", "kube-system", "kube-public"]
