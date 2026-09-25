@@ -420,15 +420,6 @@ Safepoint/
 
 ---
 
-## Dashboard (Web UI)
-
-```powershell
-docker build -t safepoint-dashboard:dev -f Dockerfile.dashboard .
-kubectl apply -f config/dashboard/deployment.yaml
-kubectl -n backup-system port-forward svc/safepoint-dashboard 8088:8088
-# open http://127.0.0.1:8088
-```
-
 ## Restore
 
 ```powershell
@@ -464,16 +455,17 @@ Operator exposes Prometheus metrics on `:8080/metrics`:
 
 Grafana dashboard JSON: `charts/safepoint/dashboards/safepoint.json`.
 
+## Development & CI
+
 ```powershell
-make tidy
-make vet
-make test
-make build
-make gencerts
-make ci
+go mod tidy
+go vet ./...
+go test ./... -count=1
+go build -o bin/manager.exe ./cmd
+go run ./scripts/gencerts -out config/webhook/certs
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), build, cert smoke, docker build.
+GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), envtest, build, Helm lint, docker build.
 
 > On some Windows setups `go test -race` needs a C toolchain; use `go test ./...` locally. CI (Ubuntu) runs `-race`.
 
@@ -491,7 +483,6 @@ GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), build, cert sm
 - [x] Prometheus metrics + Grafana dashboard  
 - [x] Helm chart (`charts/safepoint`)  
 - [x] Restore CRD (`BackupRestore`)  
-- [x] Web UI dashboard (`cmd/dashboard`)  
 
 ---
 

@@ -30,17 +30,6 @@ metrics:
     enabled: false
     interval: 30s
 
-dashboard:
-  enabled: true
-  replicaCount: 1
-  image:
-    repository: safepoint-dashboard
-    tag: dev
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 8088
-
 resources:
   requests:
     cpu: 50m
