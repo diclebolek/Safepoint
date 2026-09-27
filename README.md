@@ -23,16 +23,17 @@ Safepoint schedules, runs, and verifies backups for stateful workloads on Kubern
 6. [Tech stack — what and why](#tech-stack--what-and-why)
 7. [Prerequisites](#prerequisites)
 8. [Install Safepoint (full guide)](#install-safepoint-full-guide)
-9. [Use Safepoint day to day](#use-safepoint-day-to-day)
-10. [Demo stack (Postgres + Redis + MinIO)](#demo-stack-postgres--redis--minio)
-11. [Custom Resource reference](#custom-resource-reference)
-12. [Admission webhook](#admission-webhook)
-13. [Security model](#security-model)
-14. [Project layout](#project-layout)
-15. [Development & CI](#development--ci)
-16. [Roadmap](#roadmap)
-17. [CV / talking points](#cv--talking-points)
-18. [License](#license)
+9. [How to use (what / where / how)](#how-to-use-what--where--how)
+10. [Use Safepoint day to day](#use-safepoint-day-to-day)
+11. [Demo stack (Postgres + Redis + MinIO)](#demo-stack-postgres--redis--minio)
+12. [Custom Resource reference](#custom-resource-reference)
+13. [Admission webhook](#admission-webhook)
+14. [Security model](#security-model)
+15. [Project layout](#project-layout)
+16. [Development & CI](#development--ci)
+17. [Roadmap](#roadmap)
+18. [CV / talking points](#cv--talking-points)
+19. [License](#license)
 
 ---
 
@@ -179,8 +180,8 @@ cd Safepoint
 ### 2) Build the operator image
 
 ```powershell
-go test ./... -count=1
 docker build -t backup-operator:dev .
+docker build -t safepoint-backup:dev -f Dockerfile.backup .
 ```
 
 Docker Desktop Kubernetes will use this local image tag (`imagePullPolicy: IfNotPresent`).
@@ -188,7 +189,7 @@ Docker Desktop Kubernetes will use this local image tag (`imagePullPolicy: IfNot
 ### 3) Install CRD + RBAC
 
 ```powershell
-kubectl apply -f config/crd/bases/backup.goproject.io_backupschedules.yaml
+kubectl apply -f config/crd/bases/
 kubectl create namespace backup-system --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f config/rbac/role.yaml
 ```
@@ -205,6 +206,7 @@ This creates `config/webhook/certs/`, a Secret `webhook-server-cert` in `backup-
 
 ```powershell
 kubectl apply -f config/webhook/service.yaml
+kubectl apply -f config/metrics/service.yaml
 kubectl apply -f config/manager/deployment.yaml
 kubectl -n backup-system get pods -w
 ```
@@ -267,6 +269,125 @@ go run ./cmd --enable-webhooks=false
 ```
 
 Use this while iterating on reconcile logic. For admission tests, use the in-cluster Deployment.
+
+---
+
+## How to use (what / where / how)
+
+This is the practical “I installed it — now what?” guide.
+
+### Where things live
+
+| What | Where | Notes |
+|------|--------|--------|
+| Safepoint operator | namespace `backup-system` | Watches schedules, creates Jobs, serves metrics + webhook |
+| Your database | your app namespace (demo: `demo`) | Postgres / Redis / … |
+| Object storage (“MinIO”) | demo: `minio` Service in `demo` | Or real AWS S3 / company MinIO — change `destination.endpoint` |
+| Backup files (`.dump.gz`) | inside the bucket `db-backups` | Not on your Windows `C:\` drive |
+| Backup policy | `BackupSchedule` CR (`kubectl get bks`) | Cron + engine + secrets + destination |
+| Restore request | `BackupRestore` CR (`kubectl get bkr`) | One-shot Job that downloads + restores |
+| Metrics | Service `backup-operator-metrics:8080` | Scraped by Prometheus in demo |
+| Grafana | Service `grafana` in `demo` | Port-forward `:3000` |
+
+### A) Demo path (fastest — already wired)
+
+After [Install](#install-safepoint-full-guide) + demo manifests:
+
+```powershell
+# 1) Are backups running?
+kubectl -n demo get bks
+kubectl -n demo get jobs
+
+# 2) See last uploaded object key
+kubectl -n demo get bks shop-db-backup -o jsonpath="{.status.lastObjectKey}{'\n'}"
+
+# 3) Open Grafana
+kubectl -n demo port-forward svc/grafana 3000:3000
+# browser → http://127.0.0.1:3000  (admin/admin) → Dashboards → Safepoint
+```
+
+### B) Your own app (real usage)
+
+Do this when you have **your** Postgres (or Redis/MySQL/Mongo) in the cluster.
+
+**Step 1 — Secrets** (edit then apply):
+
+- File: [`config/samples/secrets.yaml`](config/samples/secrets.yaml)
+- Change `host`, `username`, `password`, `database` to your DB
+- Change MinIO/S3 `accessKey` / `secretKey` if needed
+- Put everything in **the same namespace** as your DB
+
+```powershell
+# example: copy samples, edit values, apply into your namespace
+kubectl apply -f config/samples/secrets.yaml
+```
+
+**Step 2 — Backup schedule** (edit then apply):
+
+- File: [`config/samples/backupschedule.yaml`](config/samples/backupschedule.yaml)
+- Set `engine`, `secretRef`, `schedule` (cron), `destination.endpoint` / `bucket`
+- Demo storage endpoint: `minio.demo.svc.cluster.local:9000`
+- Real AWS example endpoint: `s3.amazonaws.com` (and `useSSL: true`)
+
+```powershell
+kubectl apply -f config/samples/backupschedule.yaml
+kubectl get bks -A
+kubectl describe bks <your-schedule-name> -n <namespace>
+```
+
+Wait until `status.phase` is `Succeeded` and `lastObjectKey` is filled.
+
+**Step 3 — Optional: block unprotected deploys**
+
+On the Deployment/Pod:
+
+```yaml
+metadata:
+  labels:
+    backup.goproject.io/require-backup: "true"
+  annotations:
+    backup.goproject.io/database-name: shop-postgres   # must match BackupSchedule.spec.databaseRef
+```
+
+**Step 4 — Restore when something breaks**
+
+1. Copy the object key:
+
+```powershell
+kubectl -n <ns> get bks <schedule> -o jsonpath="{.status.lastObjectKey}{'\n'}"
+```
+
+2. Paste it into [`config/samples/backuprestore.yaml`](config/samples/backuprestore.yaml) as `spec.objectKey`
+3. Apply and watch:
+
+```powershell
+kubectl apply -f config/samples/backuprestore.yaml
+kubectl get bkr -A
+kubectl get bkr <restore-name> -n <ns> -w
+```
+
+Success → `status.phase: Succeeded`.
+
+**Step 5 — Check health in Grafana (optional)**
+
+```powershell
+kubectl -n demo port-forward svc/grafana 3000:3000
+# http://127.0.0.1:3000/d/safepoint-backups
+```
+
+### C) Cheat sheet
+
+| Goal | Command / file |
+|------|----------------|
+| Install operator | `config/manager/deployment.yaml` + CRDs/RBAC/webhook |
+| Start demo DB + storage | `config/demo/*.yaml` |
+| Create backup policy | `config/samples/backupschedule.yaml` → `kubectl apply` |
+| List schedules | `kubectl get bks -A` |
+| List restore runs | `kubectl get bkr -A` |
+| Last backup object | `kubectl get bks … -o jsonpath="{.status.lastObjectKey}"` |
+| Restore | `config/samples/backuprestore.yaml` |
+| Metrics raw | port-forward `svc/backup-operator-metrics` → `/metrics` |
+| Grafana UI | port-forward `svc/grafana` → `:3000` |
 
 ---
 
@@ -498,6 +619,15 @@ GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), envtest, build
 - [x] Prometheus metrics + Grafana dashboard  
 - [x] Helm chart (`charts/safepoint`)  
 - [x] Restore CRD (`BackupRestore`)  
+
+### Possible next features
+
+- Point-in-time / incremental backups  
+- Backup encryption at rest (client-side) before upload  
+- Multi-cluster / remote destination profiles  
+- Slack / email alerts on failure (Alertmanager already fits Grafana stack)  
+- `kubectl` plugin (`kubectl safepoint status`)  
+- Official OCI images on GHCR + signed releases  
 
 ---
 
