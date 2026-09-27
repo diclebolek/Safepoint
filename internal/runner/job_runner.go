@@ -94,11 +94,27 @@ func (r *JobRunner) CreateJob(ctx context.Context, schedule *backupv1.BackupSche
 		region = "us-east-1"
 	}
 
+	enc := backup.EncryptionEnv{}
+	if schedule.Spec.Encryption != nil && schedule.Spec.Encryption.Enabled {
+		if schedule.Spec.Encryption.SecretRef == "" {
+			return Result{}, fmt.Errorf("encryption.secretRef is required when encryption.enabled=true")
+		}
+		encSecret, err := readSecret(ctx, r.Client, schedule.Namespace, schedule.Spec.Encryption.SecretRef)
+		if err != nil {
+			return Result{}, err
+		}
+		pass, err := backup.ParseEncryptionSecret(encSecret)
+		if err != nil {
+			return Result{}, err
+		}
+		enc = backup.EncryptionEnv{Enabled: true, Passphrase: pass}
+	}
+
 	objectKey := backup.ObjectKey(
 		schedule.Namespace,
 		schedule.Name,
 		string(engineName),
-		engine.FileExtension(),
+		backup.EncryptedExtension(engine.FileExtension(), enc.Enabled),
 		r.now(),
 	)
 
@@ -115,6 +131,7 @@ func (r *JobRunner) CreateJob(ctx context.Context, schedule *backupv1.BackupSche
 			SecretKey: secretKey,
 			UseSSL:    schedule.Spec.Destination.UseSSL,
 		},
+		Encryption: enc,
 	})
 	if err != nil {
 		return Result{}, fmt.Errorf("build job: %w", err)

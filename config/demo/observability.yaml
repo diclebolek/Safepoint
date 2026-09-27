@@ -1,5 +1,4 @@
-# Lightweight Prometheus + Grafana for local demo (Docker Desktop).
-# Scrapes Safepoint operator metrics and loads the bundled Grafana dashboard.
+# Lightweight Prometheus + Alertmanager + Grafana for local demo (Docker Desktop).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,10 +8,105 @@ data:
   prometheus.yml: |
     global:
       scrape_interval: 15s
+      evaluation_interval: 15s
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ["alertmanager.demo.svc.cluster.local:9093"]
+    rule_files:
+      - /etc/prometheus/rules.yml
     scrape_configs:
       - job_name: safepoint
         static_configs:
           - targets: ["backup-operator-metrics.backup-system.svc.cluster.local:8080"]
+  rules.yml: |
+    groups:
+      - name: safepoint
+        rules:
+          - alert: SafepointBackupFailures
+            expr: increase(safepoint_backup_failure_total[15m]) > 0
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Safepoint backup failures detected"
+              description: "One or more backup Jobs failed in the last 15 minutes."
+          - alert: SafepointRestoreFailures
+            expr: increase(safepoint_restore_failure_total[15m]) > 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Safepoint restore failures detected"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: demo
+data:
+  alertmanager.yml: |
+    global: {}
+    route:
+      receiver: default
+      group_by: [alertname]
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 2h
+    receivers:
+      - name: default
+        # Demo: dummy webhook. For Slack, add slack_configs with api_url.
+        # For email, set smtp_* globals and email_configs.
+        webhook_configs:
+          - url: http://127.0.0.1:9/dev-null
+            send_resolved: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          args:
+            - --config.file=/etc/alertmanager/alertmanager.yml
+            - --storage.path=/alertmanager
+          ports:
+            - containerPort: 9093
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+            - name: data
+              mountPath: /alertmanager
+      volumes:
+        - name: config
+          configMap:
+            name: alertmanager-config
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: demo
+spec:
+  selector:
+    app: alertmanager
+  ports:
+    - port: 9093
+      targetPort: 9093
 ---
 apiVersion: apps/v1
 kind: Deployment

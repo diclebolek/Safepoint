@@ -5,6 +5,7 @@ tidy:
 
 build:
 	go build -o bin/manager.exe ./cmd
+	go build -o bin/kubectl-safepoint.exe ./cmd/kubectl-safepoint
 
 vet:
 	go vet ./...

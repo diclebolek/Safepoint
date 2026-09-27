@@ -48,6 +48,12 @@ spec:
                 activeDeadlineSeconds:
                   type: integer
                   format: int64
+                encryption:
+                  type: object
+                  required: [enabled, secretRef]
+                  properties:
+                    enabled: { type: boolean }
+                    secretRef: { type: string }
                 destination:
                   type: object
                   required: [endpoint, bucket, credentialsSecretRef]

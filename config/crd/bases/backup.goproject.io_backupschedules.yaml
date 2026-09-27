@@ -80,6 +80,15 @@ spec:
                   default: 1800
                 suspend:
                   type: boolean
+                encryption:
+                  type: object
+                  required: [enabled, secretRef]
+                  properties:
+                    enabled:
+                      type: boolean
+                    secretRef:
+                      type: string
+                      minLength: 1
                 destination:
                   type: object
                   required:

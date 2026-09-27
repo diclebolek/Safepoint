@@ -13,3 +13,7 @@ spec:
     bucket: db-backups
     credentialsSecretRef: minio-credentials
     useSSL: false
+  # If objectKey ends with .enc, set:
+  # encryption:
+  #   enabled: true
+  #   secretRef: backup-encryption-key

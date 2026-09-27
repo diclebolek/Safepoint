@@ -74,6 +74,11 @@ func (in *BackupScheduleSpec) DeepCopyInto(out *BackupScheduleSpec) {
 		*out = new(int64)
 		**out = **in
 	}
+	if in.Encryption != nil {
+		in, out := &in.Encryption, &out.Encryption
+		*out = new(EncryptionSpec)
+		**out = **in
+	}
 }
 
 // DeepCopy creates a new BackupScheduleSpec.
@@ -82,6 +87,21 @@ func (in *BackupScheduleSpec) DeepCopy() *BackupScheduleSpec {
 		return nil
 	}
 	out := new(BackupScheduleSpec)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto copies the receiver into out.
+func (in *EncryptionSpec) DeepCopyInto(out *EncryptionSpec) {
+	*out = *in
+}
+
+// DeepCopy creates a new EncryptionSpec.
+func (in *EncryptionSpec) DeepCopy() *EncryptionSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(EncryptionSpec)
 	in.DeepCopyInto(out)
 	return out
 }
@@ -182,6 +202,11 @@ func (in *BackupRestoreSpec) DeepCopyInto(out *BackupRestoreSpec) {
 	if in.ActiveDeadlineSeconds != nil {
 		in, out := &in.ActiveDeadlineSeconds, &out.ActiveDeadlineSeconds
 		*out = new(int64)
+		**out = **in
+	}
+	if in.Encryption != nil {
+		in, out := &in.Encryption, &out.Encryption
+		*out = new(EncryptionSpec)
 		**out = **in
 	}
 }

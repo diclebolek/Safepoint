@@ -37,6 +37,11 @@ type BackupRestoreSpec struct {
 	// ActiveDeadlineSeconds limits Job runtime.
 	// +optional
 	ActiveDeadlineSeconds *int64 `json:"activeDeadlineSeconds,omitempty"`
+
+	// Encryption decrypts an encrypted backup object before restore.
+	// Required when the object key ends with .enc / was created with encryption.
+	// +optional
+	Encryption *EncryptionSpec `json:"encryption,omitempty"`
 }
 
 // BackupRestoreStatus is the observed state.

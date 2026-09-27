@@ -18,10 +18,11 @@ const DefaultBackupImage = "safepoint-backup:dev"
 
 // RestoreRequest builds a restore Job.
 type RestoreRequest struct {
-	Restore   *backupv1.BackupRestore
-	Target    Target
-	Storage   StorageEnv
-	ObjectKey string
+	Restore    *backupv1.BackupRestore
+	Target     Target
+	Storage    StorageEnv
+	ObjectKey  string
+	Encryption EncryptionEnv
 }
 
 // BuildRestoreJob creates an engine-specific restore Job.
@@ -64,6 +65,12 @@ func BuildRestoreJob(req RestoreRequest) (*batchv1.Job, error) {
 		{Name: "S3_SCHEME", Value: scheme},
 		{Name: "OBJECT_KEY", Value: req.ObjectKey},
 	}...)
+	if req.Encryption.Enabled {
+		env = append(env,
+			corev1.EnvVar{Name: "BACKUP_ENCRYPT", Value: "1"},
+			corev1.EnvVar{Name: "BACKUP_PASSPHRASE", Value: req.Encryption.Passphrase},
+		)
+	}
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -123,6 +130,16 @@ func restoreScript(engine backupv1.DatabaseEngine) (string, error) {
 	download := `
 FILE_PATH=/tmp/restore.bin
 curl -fsS -o "$FILE_PATH" "${S3_SCHEME}://${S3_ENDPOINT}/${S3_BUCKET}/${OBJECT_KEY}"
+if [ "${BACKUP_ENCRYPT:-0}" = "1" ] || echo "$OBJECT_KEY" | grep -q '\.enc$'; then
+  if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
+    echo "BACKUP_PASSPHRASE required to decrypt encrypted backup" >&2
+    exit 1
+  fi
+  command -v openssl >/dev/null || apk add --no-cache openssl >/dev/null
+  openssl enc -d -aes-256-cbc -pbkdf2 -pass env:BACKUP_PASSPHRASE -in "$FILE_PATH" -out /tmp/restore.dec
+  FILE_PATH=/tmp/restore.dec
+  echo "decrypted backup blob"
+fi
 `
 	switch engine {
 	case backupv1.EnginePostgres:

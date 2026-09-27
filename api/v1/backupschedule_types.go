@@ -66,6 +66,20 @@ type BackupScheduleSpec struct {
 	// Suspend stops scheduling new backups when true.
 	// +optional
 	Suspend bool `json:"suspend,omitempty"`
+
+	// Encryption optionally encrypts backup objects with AES-256-CBC before upload.
+	// Secret must contain key "password" (passphrase) or "key" (raw passphrase).
+	// +optional
+	Encryption *EncryptionSpec `json:"encryption,omitempty"`
+}
+
+// EncryptionSpec enables client-side encryption of backup blobs.
+type EncryptionSpec struct {
+	// Enabled turns on openssl AES-256-CBC encryption before upload.
+	Enabled bool `json:"enabled"`
+	// SecretRef names a Secret with the encryption passphrase.
+	// +kubebuilder:validation:MinLength=1
+	SecretRef string `json:"secretRef"`
 }
 
 // ObjectStorageSpec configures an S3-compatible destination.

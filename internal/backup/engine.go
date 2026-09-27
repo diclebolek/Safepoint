@@ -32,10 +32,11 @@ type Target struct {
 
 // JobRequest is the input for building a backup Job.
 type JobRequest struct {
-	Schedule  *backupv1.BackupSchedule
-	Target    Target
-	ObjectKey string
-	Storage   StorageEnv
+	Schedule   *backupv1.BackupSchedule
+	Target     Target
+	ObjectKey  string
+	Storage    StorageEnv
+	Encryption EncryptionEnv
 }
 
 // StorageEnv is injected into the Job for MinIO/S3 upload (never log these).
@@ -47,6 +48,12 @@ type StorageEnv struct {
 	AccessKey string
 	SecretKey string
 	UseSSL    bool
+}
+
+// EncryptionEnv holds the passphrase for optional AES encryption.
+type EncryptionEnv struct {
+	Enabled    bool
+	Passphrase string
 }
 
 // Engine builds a Kubernetes Job that dumps a specific database engine.
@@ -97,6 +104,27 @@ func ObjectKey(namespace, scheduleName, engine, ext string, at time.Time) string
 		at.UTC().Format("20060102T150405Z"),
 		ext,
 	)
+}
+
+// EncryptedExtension appends .enc when encryption is enabled.
+func EncryptedExtension(baseExt string, encrypted bool) string {
+	baseExt = strings.TrimPrefix(baseExt, ".")
+	if encrypted {
+		return baseExt + ".enc"
+	}
+	return baseExt
+}
+
+// ParseEncryptionSecret reads passphrase from password or key fields.
+func ParseEncryptionSecret(data map[string][]byte) (string, error) {
+	pass := string(data["password"])
+	if pass == "" {
+		pass = string(data["key"])
+	}
+	if pass == "" {
+		return "", fmt.Errorf("encryption secret must contain password or key")
+	}
+	return pass, nil
 }
 
 // ParseTargetSecret maps Secret data into a Target.
@@ -208,7 +236,7 @@ func storageEnv(req JobRequest) []corev1.EnvVar {
 	if req.Storage.UseSSL {
 		scheme = "https"
 	}
-	return []corev1.EnvVar{
+	env := []corev1.EnvVar{
 		{Name: "S3_ENDPOINT", Value: req.Storage.Endpoint},
 		{Name: "S3_BUCKET", Value: req.Storage.Bucket},
 		{Name: "S3_PREFIX", Value: req.Storage.Prefix},
@@ -218,6 +246,13 @@ func storageEnv(req JobRequest) []corev1.EnvVar {
 		{Name: "S3_SCHEME", Value: scheme},
 		{Name: "OBJECT_KEY", Value: req.ObjectKey},
 	}
+	if req.Encryption.Enabled {
+		env = append(env,
+			corev1.EnvVar{Name: "BACKUP_ENCRYPT", Value: "1"},
+			corev1.EnvVar{Name: "BACKUP_PASSPHRASE", Value: req.Encryption.Passphrase},
+		)
+	}
+	return env
 }
 
 func targetEnv(t Target) []corev1.EnvVar {
@@ -232,7 +267,18 @@ func targetEnv(t Target) []corev1.EnvVar {
 
 // uploadScript uploads FILE_PATH to OBJECT_KEY.
 // Prefer curl PUT (works with SeaweedFS / many S3 gateways); fall back to mc if available.
+// When BACKUP_ENCRYPT=1, encrypts with openssl AES-256-CBC before upload.
 const uploadScript = `
+if [ "${BACKUP_ENCRYPT:-0}" = "1" ]; then
+  if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
+    echo "BACKUP_PASSPHRASE required when BACKUP_ENCRYPT=1" >&2
+    exit 1
+  fi
+  command -v openssl >/dev/null || apk add --no-cache openssl >/dev/null
+  openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_PASSPHRASE -in "${FILE_PATH}" -out "${FILE_PATH}.enc"
+  FILE_PATH="${FILE_PATH}.enc"
+  echo "encrypted backup blob"
+fi
 upload_with_curl() {
   curl -fsS -X PUT \
     -H "Content-Type: application/octet-stream" \

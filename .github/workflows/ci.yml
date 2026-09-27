@@ -30,7 +30,9 @@ jobs:
           go test ./internal/controller -tags=envtest -count=1 -v
 
       - name: Build binaries
-        run: go build -o bin/manager ./cmd
+        run: |
+          go build -o bin/manager ./cmd
+          go build -o bin/kubectl-safepoint ./cmd/kubectl-safepoint
 
       - name: Helm lint
         run: |

@@ -591,6 +591,42 @@ Operator exposes Prometheus metrics on `:8080/metrics` (Service `backup-operator
 Demo stack: Prometheus + Grafana under `config/demo/observability.yaml`.
 Grafana dashboard JSON: `charts/safepoint/dashboards/safepoint.json` (also applied as ConfigMap in demo).
 
+### Encryption (optional)
+
+Encrypt backup blobs **before upload** (AES-256-CBC via openssl in the Job):
+
+```yaml
+spec:
+  encryption:
+    enabled: true
+    secretRef: backup-encryption-key   # Secret key: password (or key)
+```
+
+Object keys get a `.enc` suffix. On restore, set the same `encryption` block (or ensure `objectKey` ends with `.enc` and provide `secretRef`).
+
+Sample secret: `config/samples/secrets.yaml` → `backup-encryption-key`.
+
+### kubectl plugin
+
+```powershell
+go build -o kubectl-safepoint.exe ./cmd/kubectl-safepoint
+# put kubectl-safepoint.exe on PATH, then:
+kubectl safepoint status
+kubectl safepoint schedules -n demo
+kubectl safepoint restores -n demo
+```
+
+### GHCR images
+
+On push to `main` / tags `v*`, `.github/workflows/release.yml` publishes and cosign-signs:
+
+- `ghcr.io/<owner>/safepoint-operator`
+- `ghcr.io/<owner>/safepoint-backup`
+
+### Alerts
+
+Demo Prometheus loads rules that fire `SafepointBackupFailures` / `SafepointRestoreFailures` into Alertmanager (`config/demo/observability.yaml`). Edit `alertmanager-config` for Slack `api_url` or SMTP email.
+
 ## Development & CI
 
 ```powershell
@@ -622,12 +658,15 @@ GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), envtest, build
 
 ### Possible next features
 
-- Point-in-time / incremental backups  
-- Backup encryption at rest (client-side) before upload  
-- Multi-cluster / remote destination profiles  
-- Slack / email alerts on failure (Alertmanager already fits Grafana stack)  
-- `kubectl` plugin (`kubectl safepoint status`)  
-- Official OCI images on GHCR + signed releases  
+- Point-in-time / incremental backups (WAL / binlog based)  
+- Multi-cluster destination profiles  
+
+### Added in this release line
+
+- Client-side backup encryption (`spec.encryption`, AES-256-CBC / openssl)  
+- Alertmanager rules for backup/restore failures (`config/demo/observability.yaml`)  
+- `kubectl safepoint` plugin (`cmd/kubectl-safepoint`)  
+- GHCR publish + cosign signing (`.github/workflows/release.yml`)  
 
 ---
 

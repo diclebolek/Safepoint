@@ -10,6 +10,10 @@ spec:
   schedule: "*/5 * * * *" # every 5 minutes (demo)
   retentionDays: 7
   suspend: false
+  # Optional client-side encryption (AES-256-CBC via openssl):
+  # encryption:
+  #   enabled: true
+  #   secretRef: backup-encryption-key
   destination:
     endpoint: minio.minio.svc.cluster.local:9000
     bucket: db-backups

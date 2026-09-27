@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -93,6 +94,30 @@ func (r *BackupRestoreReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		region = "us-east-1"
 	}
 
+	enc := backup.EncryptionEnv{}
+	needsDecrypt := restore.Spec.Encryption != nil && restore.Spec.Encryption.Enabled
+	if !needsDecrypt && strings.HasSuffix(restore.Spec.ObjectKey, ".enc") {
+		needsDecrypt = true
+	}
+	if needsDecrypt {
+		ref := ""
+		if restore.Spec.Encryption != nil {
+			ref = restore.Spec.Encryption.SecretRef
+		}
+		if ref == "" {
+			return r.fail(ctx, &restore, "encryption.secretRef required for encrypted object")
+		}
+		encSecret, err := ReadSecretData(ctx, r.Client, restore.Namespace, ref)
+		if err != nil {
+			return r.fail(ctx, &restore, err.Error())
+		}
+		pass, err := backup.ParseEncryptionSecret(encSecret)
+		if err != nil {
+			return r.fail(ctx, &restore, err.Error())
+		}
+		enc = backup.EncryptionEnv{Enabled: true, Passphrase: pass}
+	}
+
 	job, err := backup.BuildRestoreJob(backup.RestoreRequest{
 		Restore:   &restore,
 		Target:    backup.ParseTargetSecret(dbSecret),
@@ -106,6 +131,7 @@ func (r *BackupRestoreReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			SecretKey: secretKey,
 			UseSSL:    restore.Spec.Destination.UseSSL,
 		},
+		Encryption: enc,
 	})
 	if err != nil {
 		return r.fail(ctx, &restore, err.Error())
