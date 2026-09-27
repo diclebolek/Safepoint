@@ -28,12 +28,13 @@ const (
 
 // Result is returned by CreateJob / GetJob.
 type Result struct {
-	Outcome           JobOutcome
-	JobName           string
-	ObjectKey         string
-	Mode              backupv1.BackupMode
-	ParentObjectKey   string
-	Message           string
+	Outcome         JobOutcome
+	JobName         string
+	ObjectKey       string
+	Mode            backupv1.BackupMode
+	ParentObjectKey string
+	Message         string
+	StartedAt       *time.Time
 }
 
 // JobRunner creates and observes per-schedule backup Jobs.
@@ -169,34 +170,31 @@ func inspectJob(job *batchv1.Job) Result {
 	objectKey := job.Annotations[backup.AnnotationObjectKey]
 	mode := backupv1.BackupMode(job.Annotations[backup.AnnotationMode])
 	parent := job.Annotations[backup.AnnotationParentKey]
-	if job.Status.Succeeded > 0 {
-		return Result{
-			Outcome:         JobSucceeded,
-			JobName:         job.Name,
-			ObjectKey:       objectKey,
-			Mode:            mode,
-			ParentObjectKey: parent,
-			Message:         "backup job succeeded",
-		}
+	var started *time.Time
+	if job.Status.StartTime != nil {
+		t := job.Status.StartTime.Time
+		started = &t
 	}
-	if job.Status.Failed > 0 {
-		return Result{
-			Outcome:         JobFailed,
-			JobName:         job.Name,
-			ObjectKey:       objectKey,
-			Mode:            mode,
-			ParentObjectKey: parent,
-			Message:         "backup job failed",
-		}
-	}
-	return Result{
-		Outcome:         JobRunning,
+	base := Result{
 		JobName:         job.Name,
 		ObjectKey:       objectKey,
 		Mode:            mode,
 		ParentObjectKey: parent,
-		Message:         "backup job running",
+		StartedAt:       started,
 	}
+	if job.Status.Succeeded > 0 {
+		base.Outcome = JobSucceeded
+		base.Message = "backup job succeeded"
+		return base
+	}
+	if job.Status.Failed > 0 {
+		base.Outcome = JobFailed
+		base.Message = "backup job failed"
+		return base
+	}
+	base.Outcome = JobRunning
+	base.Message = "backup job running"
+	return base
 }
 
 func readSecret(ctx context.Context, c client.Client, namespace, name string) (map[string][]byte, error) {

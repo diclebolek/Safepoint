@@ -16,9 +16,73 @@ data:
       "links": [],
       "panels": [
         {
-          "title": "Backup successes (total)",
+          "title": "Postgres backup successes",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "fieldConfig": {
+            "defaults": { "unit": "short", "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+          "targets": [
+            {
+              "expr": "sum(safepoint_backup_success_total{engine=\"postgres\"}) or vector(0)",
+              "legendFormat": "postgres",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Redis backup successes",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+          "fieldConfig": {
+            "defaults": { "unit": "short", "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "yellow", "value": null }] } },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+          "targets": [
+            {
+              "expr": "sum(safepoint_backup_success_total{engine=\"redis\"}) or vector(0)",
+              "legendFormat": "redis",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Backup failures",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+          "fieldConfig": {
+            "defaults": { "unit": "short", "min": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+          "targets": [
+            {
+              "expr": "sum(safepoint_backup_failure_total) or vector(0)",
+              "legendFormat": "failures",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Restore successes",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+          "fieldConfig": {
+            "defaults": { "unit": "short", "min": 0 },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+          "targets": [
+            { "expr": "sum(safepoint_restore_success_total) or vector(0)", "legendFormat": "restores", "refId": "A" }
+          ]
+        },
+        {
+          "title": "Backup successes over time",
           "type": "timeseries",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
           "fieldConfig": {
             "defaults": { "unit": "short", "min": 0 },
             "overrides": []
@@ -32,68 +96,28 @@ data:
           ]
         },
         {
-          "title": "Backup failures (total)",
+          "title": "Backup job duration (avg seconds)",
           "type": "timeseries",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-          "fieldConfig": {
-            "defaults": { "unit": "short", "min": 0 },
-            "overrides": []
-          },
-          "targets": [
-            {
-              "expr": "safepoint_backup_failure_total",
-              "legendFormat": "{{engine}} / {{schedule}}",
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "title": "Backup duration seconds (last observed sum/count)",
-          "type": "timeseries",
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
           "fieldConfig": {
             "defaults": { "unit": "s", "min": 0 },
             "overrides": []
           },
           "targets": [
             {
-              "expr": "safepoint_backup_duration_seconds_sum / safepoint_backup_duration_seconds_count",
-              "legendFormat": "{{engine}} avg",
+              "expr": "safepoint_backup_duration_seconds_sum / clamp_min(safepoint_backup_duration_seconds_count, 1)",
+              "legendFormat": "{{engine}}",
               "refId": "A"
             }
-          ]
-        },
-        {
-          "title": "Restore successes",
-          "type": "stat",
-          "gridPos": { "h": 4, "w": 12, "x": 0, "y": 16 },
-          "fieldConfig": {
-            "defaults": { "unit": "short", "min": 0 },
-            "overrides": []
-          },
-          "targets": [
-            { "expr": "sum(safepoint_restore_success_total) or vector(0)", "legendFormat": "restores", "refId": "A" }
-          ]
-        },
-        {
-          "title": "Restore failures",
-          "type": "stat",
-          "gridPos": { "h": 4, "w": 12, "x": 12, "y": 16 },
-          "fieldConfig": {
-            "defaults": { "unit": "short", "min": 0 },
-            "overrides": []
-          },
-          "targets": [
-            { "expr": "sum(safepoint_restore_failure_total) or vector(0)", "legendFormat": "failures", "refId": "A" }
           ]
         }
       ],
       "schemaVersion": 39,
       "tags": ["safepoint", "backup", "kubernetes"],
       "templating": { "list": [] },
-      "time": { "from": "now-6h", "to": "now" },
+      "time": { "from": "now-1h", "to": "now" },
       "title": "Safepoint Backups",
       "uid": "safepoint-backups",
-      "version": 2
+      "version": 3
     }
     

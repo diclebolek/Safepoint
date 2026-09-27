@@ -1,4 +1,4 @@
-package controller
+﻿package controller
 
 import (
 	"context"
@@ -188,9 +188,9 @@ func (r *BackupScheduleReconciler) observeRunningJob(
 		logger.Info("backup succeeded", "job", result.JobName, "objectKey", result.ObjectKey)
 		engine := string(schedule.EffectiveEngine())
 		metrics.BackupSuccess.WithLabelValues(schedule.Namespace, schedule.Name, engine).Inc()
-		if schedule.Status.LastBackupTime != nil {
+		if result.StartedAt != nil {
 			metrics.BackupDuration.WithLabelValues(schedule.Namespace, schedule.Name, engine).
-				Observe(now.Sub(schedule.Status.LastBackupTime.Time).Seconds())
+				Observe(now.Sub(*result.StartedAt).Seconds())
 		}
 		if err := r.applyRetention(ctx, schedule); err != nil {
 			logger.Error(err, "retention cleanup failed")
