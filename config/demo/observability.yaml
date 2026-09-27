@@ -209,12 +209,15 @@ spec:
         - name: grafana
           image: grafana/grafana:11.2.0
           env:
+            # Demo defaults — change before any shared/production use.
             - name: GF_SECURITY_ADMIN_USER
               value: admin
             - name: GF_SECURITY_ADMIN_PASSWORD
-              value: admin
+              value: admin # change this password
             - name: GF_USERS_ALLOW_SIGN_UP
               value: "false"
+            # true = view dashboards without login (OK for local demo).
+            # Set to "false" if the cluster is shared or exposed.
             - name: GF_AUTH_ANONYMOUS_ENABLED
               value: "true"
             - name: GF_AUTH_ANONYMOUS_ORG_ROLE
