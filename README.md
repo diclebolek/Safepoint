@@ -35,9 +35,8 @@ Safepoint schedules, runs, and verifies backups for stateful workloads on Kubern
 18. [Project layout](#project-layout)
 19. [Development & CI](#development--ci)
 20. [Roadmap](#roadmap)
-21. [LinkedIn / demo screenshots](#linkedin--demo-screenshots)
-22. [CV / talking points](#cv--talking-points)
-23. [License](#license)
+21. [CV / talking points](#cv--talking-points)
+22. [License](#license)
 
 ---
 
@@ -805,7 +804,7 @@ kubectl apply -f config/hardening/networkpolicies.yaml
 kubectl apply -f config/hardening/pdb.yaml
 ```
 
-See also `config/hardening/secrets-management.md`, `docs/PITR.md`, `docs/DEMO_SCREENSHOTS.md`.
+See also `config/hardening/secrets-management.md`, `docs/PITR.md`.
 
 ### Destination profiles + incremental mode
 
