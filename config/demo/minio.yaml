@@ -1,3 +1,6 @@
+# Purpose: Demo S3-compatible object storage (SeaweedFS, Service name still "minio").
+# Used by: BackupSchedule destination endpoint minio.demo.svc.cluster.local:9000
+# Creates: demo namespace, credentials Secret, Deployment/Service, optional bucket Job.
 apiVersion: v1
 kind: Namespace
 metadata:

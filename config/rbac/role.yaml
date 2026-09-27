@@ -1,3 +1,5 @@
+# Purpose: ServiceAccount + ClusterRole/Binding so the operator can watch CRs, Jobs, Secrets.
+# Used by: backup-operator Deployment (serviceAccountName: backup-operator).
 apiVersion: v1
 kind: ServiceAccount
 metadata:

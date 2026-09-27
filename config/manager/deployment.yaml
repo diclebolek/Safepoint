@@ -1,3 +1,6 @@
+# Purpose: Run the Safepoint operator Pod in namespace backup-system.
+# Used by: Cluster control plane -- this IS "installing the operator".
+# Image: backup-operator:dev (build locally) or a GHCR tag in real use.
 apiVersion: v1
 kind: Namespace
 metadata:

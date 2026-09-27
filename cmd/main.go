@@ -1,3 +1,6 @@
+// Command backup-operator is the Safepoint Kubernetes operator entrypoint.
+// It starts controllers for BackupSchedule/BackupRestore, optional admission
+// webhooks, health probes, and the Prometheus metrics server.
 package main
 
 import (

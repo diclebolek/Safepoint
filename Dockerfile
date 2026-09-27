@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# Purpose: Build the Safepoint operator image (manager binary) for Kubernetes.
 FROM golang:1.27-alpine AS builder
 WORKDIR /workspace
 COPY go.mod go.sum ./

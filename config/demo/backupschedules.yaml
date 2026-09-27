@@ -1,3 +1,6 @@
+# Purpose: Demo BackupSchedule objects -- one per database to back up.
+# Used by: Safepoint operator (watches these CRs and creates backup Jobs).
+# Edit/add: Copy a BackupSchedule block to protect another DB (multi-DB = multiple schedules).
 apiVersion: v1
 kind: Secret
 metadata:

@@ -1,3 +1,5 @@
+// Package backup builds engine-specific dump/restore Job specs, object keys,
+// retention helpers, encryption hooks, and destination profile resolution.
 package backup
 
 import (

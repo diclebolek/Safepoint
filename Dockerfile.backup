@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# Purpose: Hardened Job image with dump/restore clients (postgres/redis/mysql) + openssl + curl.
 FROM alpine:3.20
 RUN apk add --no-cache \
       bash curl ca-certificates gzip openssl \

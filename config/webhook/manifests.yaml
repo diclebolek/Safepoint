@@ -1,3 +1,5 @@
+# Purpose: ValidatingWebhookConfiguration -- fail-closed policy for labeled Pods/Deployments.
+# Used by: API server calls operator before create/update when labels require backup.
 # caBundle is injected by scripts/gen-webhook-certs.ps1
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration

@@ -1,3 +1,6 @@
+# Purpose: Demo Postgres Deployment + connection Secret for shop-db-backup.
+# Used by: BackupSchedule secretRef shop-postgres-credentials (host/user/password/database).
+# Note: Labeled require-backup so the admission webhook enforces a schedule exists.
 apiVersion: v1
 kind: Secret
 metadata:

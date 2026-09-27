@@ -23,17 +23,19 @@ Safepoint schedules, runs, and verifies backups for stateful workloads on Kubern
 6. [Tech stack — what and why](#tech-stack--what-and-why)
 7. [Prerequisites](#prerequisites)
 8. [Install Safepoint (full guide)](#install-safepoint-full-guide)
-9. [How to use (what / where / how)](#how-to-use-what--where--how)
-10. [Use Safepoint day to day](#use-safepoint-day-to-day)
-11. [Demo stack (Postgres + Redis + MinIO)](#demo-stack-postgres--redis--minio)
-12. [Custom Resource reference](#custom-resource-reference)
-13. [Admission webhook](#admission-webhook)
-14. [Security model](#security-model)
-15. [Project layout](#project-layout)
-16. [Development & CI](#development--ci)
-17. [Roadmap](#roadmap)
-18. [CV / talking points](#cv--talking-points)
-19. [License](#license)
+9. [What is “installing the operator”?](#what-is-installing-the-operator)
+10. [Multiple databases + what to change when you clone](#multiple-databases--what-to-change-when-you-clone)
+11. [How to use (what / where / how)](#how-to-use-what--where--how)
+12. [Use Safepoint day to day](#use-safepoint-day-to-day)
+13. [Demo stack (Postgres + Redis + MinIO)](#demo-stack-postgres--redis--minio)
+14. [Custom Resource reference](#custom-resource-reference)
+15. [Admission webhook](#admission-webhook)
+16. [Security model](#security-model)
+17. [Project layout](#project-layout)
+18. [Development & CI](#development--ci)
+19. [Roadmap](#roadmap)
+20. [CV / talking points](#cv--talking-points)
+21. [License](#license)
 
 ---
 
@@ -269,6 +271,86 @@ go run ./cmd --enable-webhooks=false
 ```
 
 Use this while iterating on reconcile logic. For admission tests, use the in-cluster Deployment.
+
+---
+
+## What is “installing the operator”?
+
+The **operator** is the Safepoint Go program (`cmd/main.go`) running **inside your Kubernetes cluster** as a Deployment named `backup-operator` (namespace `backup-system`).
+
+“Install the operator” means:
+
+1. Build/push the container image (`backup-operator:dev` or GHCR image)
+2. Apply CRDs (API types: `BackupSchedule`, `BackupRestore`, `DestinationProfile`)
+3. Apply RBAC + webhook certs
+4. Apply `config/manager/deployment.yaml` so the Pod starts
+
+After that, the operator **watches** `BackupSchedule` objects and creates backup Jobs automatically.  
+You do **not** run backups by hand every day — you apply YAML once; the operator keeps working.
+
+---
+
+## Multiple databases + what to change when you clone
+
+### Can Safepoint back up more than one DB?
+
+**Yes.** One `BackupSchedule` = one database target.  
+Demo already backs up **two**: Postgres (`shop-db-backup`) and Redis (`shop-redis-backup`).
+
+To add another DB, add **new YAML** (do not overwrite the old schedule):
+
+1. A Secret with connection fields (`host`, `port`, `username`, `password`, `database`, …)
+2. A `BackupSchedule` pointing at that Secret
+
+Example (third DB):
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: payments-postgres-credentials
+  namespace: myapp
+type: Opaque
+stringData:
+  host: payments-db.myapp.svc.cluster.local
+  port: "5432"
+  username: app
+  password: CHANGE_ME
+  database: payments
+---
+apiVersion: backup.goproject.io/v1
+kind: BackupSchedule
+metadata:
+  name: payments-db-backup
+  namespace: myapp
+spec:
+  engine: postgres
+  databaseRef: payments-db
+  secretRef: payments-postgres-credentials
+  schedule: "0 2 * * *"
+  destinationRef: demo-minio   # or inline destination: { endpoint, bucket, credentialsSecretRef }
+```
+
+```powershell
+kubectl apply -f my-payments-backup.yaml
+kubectl get bks -A
+```
+
+### Which files does someone else change?
+
+| Goal | File(s) to edit | What to change |
+|------|-----------------|----------------|
+| **Which DB to back up** | New YAML or `config/samples/secrets.yaml` + `config/samples/backupschedule.yaml` | `host`, `database`, `secretRef`, `engine`, `schedule` |
+| **Add a 2nd / 3rd DB** | **New** schedule+secret YAML (copy samples) | New names; apply with `kubectl apply -f` |
+| **Where backups are stored** | `destination` / `DestinationProfile` (`config/samples/destinationprofile.yaml`) | `endpoint`, `bucket`, S3 keys |
+| **Grafana login / anonymous view** | `config/demo/observability.yaml` | `GF_SECURITY_ADMIN_PASSWORD`, `GF_AUTH_ANONYMOUS_ENABLED` |
+| **Slack/email alerts** | `config/demo/observability.yaml` → `alertmanager-config` | `slack_configs` / SMTP |
+| **Operator image tag** | `config/manager/deployment.yaml` | `image:` (local `:dev` or `ghcr.io/...`) |
+| **Demo only (try the project)** | Usually **no edits** | Follow Install + apply `config/demo/*` |
+
+You do **not** only edit `observability.yaml` to back up a database. That file is **metrics/UI only**.
+
+Starter copies live under `config/samples/`. Demo stack under `config/demo/`.
 
 ---
 

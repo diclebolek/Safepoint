@@ -1,3 +1,4 @@
+// Package runner creates and observes Kubernetes Jobs for BackupSchedule runs.
 package runner
 
 import (

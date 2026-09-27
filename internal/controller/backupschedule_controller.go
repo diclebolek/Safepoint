@@ -1,4 +1,6 @@
-﻿package controller
+﻿// Package controller implements Kubernetes reconcile loops for Safepoint CRs
+// (BackupSchedule, BackupRestore) and helpers such as destination resolution.
+package controller
 
 import (
 	"context"

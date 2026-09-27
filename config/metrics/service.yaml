@@ -1,3 +1,5 @@
+# Purpose: Expose operator Prometheus metrics on port 8080 inside the cluster.
+# Used by: Prometheus scrape job in config/demo/observability.yaml.
 apiVersion: v1
 kind: Service
 metadata:

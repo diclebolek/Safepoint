@@ -1,3 +1,5 @@
+# Purpose: EXAMPLE workload labels/annotations that trigger the backup-required webhook.
+# Used by: Negative tests -- deploy without a matching BackupSchedule -> request denied.
 # Example workload that the validating webhook will protect (Phase 3).
 apiVersion: v1
 kind: Pod

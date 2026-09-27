@@ -1,3 +1,4 @@
+// Package metrics registers Prometheus counters/histograms for backup and restore outcomes.
 package metrics
 
 import (

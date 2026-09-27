@@ -1,3 +1,5 @@
+# Purpose: EXAMPLE reusable S3 destination (DestinationProfile / shortName bdp).
+# Used by: BackupSchedule.spec.destinationRef instead of repeating inline destination.
 apiVersion: backup.goproject.io/v1
 kind: DestinationProfile
 metadata:

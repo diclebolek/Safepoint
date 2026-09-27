@@ -1,3 +1,6 @@
+# Purpose: Demo Prometheus + Alertmanager + Grafana stack for Safepoint metrics.
+# Used by: Humans watching backup success/failure (port-forward grafana:3000).
+# Not used for: choosing which DB to back up (that is BackupSchedule YAML).
 # Lightweight Prometheus + Alertmanager + Grafana for local demo (Docker Desktop).
 apiVersion: v1
 kind: ConfigMap
@@ -209,7 +212,7 @@ spec:
         - name: grafana
           image: grafana/grafana:11.2.0
           env:
-            # Demo defaults — change before any shared/production use.
+            # Demo defaults -- change before any shared/production use.
             - name: GF_SECURITY_ADMIN_USER
               value: admin
             - name: GF_SECURITY_ADMIN_PASSWORD
