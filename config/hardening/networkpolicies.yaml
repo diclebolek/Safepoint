@@ -1,0 +1,82 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Production'a yakin ag kilitleri (NetworkPolicy).
+#   Operator ve demo is yuklelerinin gereksiz trafikini kisitlar.
+#
+# Not: Cluster'da NetworkPolicy'yi uygulayan CNI gerekir (Calico/Cilium/…).
+# Docker Desktop bazen politikayi yumusar; yine de manifesto olarak dogrudur.
+#
+# Uygulama: kubectl apply -f config/hardening/
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backup-operator-default-deny-ingress
+  namespace: backup-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: backup-operator
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    # Prometheus scrape (demo ns -> metrics Service)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: demo
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Admission webhook (API server calls pod :9443 via Service)
+    - ports:
+        - protocol: TCP
+          port: 9443
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Kubernetes API
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo-backup-jobs
+  namespace: demo
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/managed-by: backup-operator
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Reach DBs + MinIO in demo
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 3306
+        - protocol: TCP
+          port: 27017
+        - protocol: TCP
+          port: 9000

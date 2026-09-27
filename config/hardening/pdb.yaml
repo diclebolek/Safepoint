@@ -1,0 +1,17 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Operator icin PodDisruptionBudget -- node drain sirasinda en az 1 aktif kopya
+#   kalmasini hedefler (replicas>=2 iken anlamli; tek replica'da yine manifesto hazir).
+# Uygulama: kubectl apply -f config/hardening/pdb.yaml
+# =============================================================================
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backup-operator
+  namespace: backup-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backup-operator

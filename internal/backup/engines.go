@@ -31,9 +31,14 @@ func (e PostgresEngine) BuildJob(req JobRequest) (*batchv1.Job, error) {
 	if req.Target.Port == "" {
 		req.Target.Port = "5432"
 	}
+	// Capture WAL LSN alongside the logical dump so manifests can support future PITR tooling.
 	script := `
-command -v curl >/dev/null || apk add --no-cache curl gzip >/dev/null
+command -v curl >/dev/null || apk add --no-cache curl gzip postgresql16-client >/dev/null
 export PGPASSWORD="$DB_PASSWORD"
+# Point-in-time hint: LSN at dump start (full WAL archiving still needed for true PITR).
+WAL_LSN=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT pg_current_wal_lsn()" 2>/dev/null || true)
+export WAL_LSN
+echo "postgres wal lsn=${WAL_LSN:-unknown}"
 FILE_PATH=/tmp/backup.dump.gz
 pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F c | gzip -c > "$FILE_PATH"
 ` + uploadScript
@@ -61,7 +66,10 @@ func (e MySQLEngine) BuildJob(req JobRequest) (*batchv1.Job, error) {
 		req.Target.Port = "3306"
 	}
 	script := `
-command -v curl >/dev/null || (export DEBIAN_FRONTEND=noninteractive && apt-get update >/dev/null && apt-get install -y --no-install-recommends curl gzip ca-certificates >/dev/null)
+command -v curl >/dev/null || (export DEBIAN_FRONTEND=noninteractive && apt-get update >/dev/null && apt-get install -y --no-install-recommends curl gzip ca-certificates mariadb-client >/dev/null)
+# Best-effort binlog coordinate for future PITR tooling (stored in manifest as walLsn field).
+WAL_LSN=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -N -e "SHOW MASTER STATUS" 2>/dev/null | awk '{print $1":"$2}' || true)
+export WAL_LSN
 FILE_PATH=/tmp/backup.sql.gz
 mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" --single-transaction --routines --triggers "$DB_NAME" | gzip -c > "$FILE_PATH"
 ` + uploadScript

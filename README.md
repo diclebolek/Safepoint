@@ -35,8 +35,9 @@ Safepoint schedules, runs, and verifies backups for stateful workloads on Kubern
 18. [Project layout](#project-layout)
 19. [Development & CI](#development--ci)
 20. [Roadmap](#roadmap)
-21. [CV / talking points](#cv--talking-points)
-22. [License](#license)
+21. [LinkedIn / demo screenshots](#linkedin--demo-screenshots)
+22. [CV / talking points](#cv--talking-points)
+23. [License](#license)
 
 ---
 
@@ -795,7 +796,16 @@ GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), envtest, build
 
 ### Possible next features
 
-_(none — WAL-native PITR / binlog streaming can still deepen incremental mode)_
+- Continuous WAL shipping DaemonSet (`pg_receivewal`) wired to DestinationProfile  
+
+### Production hardening
+
+```powershell
+kubectl apply -f config/hardening/networkpolicies.yaml
+kubectl apply -f config/hardening/pdb.yaml
+```
+
+See also `config/hardening/secrets-management.md`, `docs/PITR.md`, `docs/DEMO_SCREENSHOTS.md`.
 
 ### Destination profiles + incremental mode
 
@@ -819,7 +829,7 @@ spec:
   mode: incremental            # first success is full; later runs record parentObjectKey
 ```
 
-Incremental mode still produces a restorable dump Job (same engines) and uploads a `.manifest.json` chain record. Status tracks `lastFullObjectKey` / `parentObjectKey`. Native WAL/binlog streaming PITR remains an optional hardening layer on top.
+Incremental mode still produces a restorable dump Job (same engines) and uploads a `.manifest.json` chain record (includes Postgres `walLsn`). Status tracks `lastFullObjectKey` / `parentObjectKey`. See [`docs/PITR.md`](docs/PITR.md) for true WAL PITR next steps.
 
 ### Added in this release line
 
@@ -829,6 +839,18 @@ Incremental mode still produces a restorable dump Job (same engines) and uploads
 - GHCR publish + cosign signing (`.github/workflows/release.yml`)  
 - `DestinationProfile` CRD (`destinationRef`) for shared S3 endpoints  
 - Incremental backup mode with chain metadata / manifests  
+- Production hardening samples (`config/hardening/`) + PITR/LSN docs  
+
+---
+
+## LinkedIn / demo screenshots
+
+Step-by-step capture guide: [`docs/DEMO_SCREENSHOTS.md`](docs/DEMO_SCREENSHOTS.md).
+
+Short TR caption:
+
+> Safepoint — Go ile yazdığım Kubernetes backup operator: CRD, admission webhook, multi-DB, S3, restore, Prometheus/Grafana.  
+> https://github.com/diclebolek/Safepoint
 
 ---
 

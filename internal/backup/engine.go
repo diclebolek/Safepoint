@@ -318,10 +318,11 @@ else
   echo "upload failed: curl PUT and mc both unavailable/failed" >&2
   exit 1
 fi
-# Chain manifest for incremental / multi-destination tooling
+# Chain manifest for incremental / PITR tooling (LSN filled by postgres engine when available)
 MANIFEST_PATH=/tmp/safepoint-manifest.json
-printf '{"mode":"%s","objectKey":"%s","parentObjectKey":"%s","engine":"%s"}\n' \
-  "${BACKUP_MODE:-full}" "${OBJECT_KEY}" "${PARENT_OBJECT_KEY:-}" "${ENGINE_NAME:-unknown}" > "${MANIFEST_PATH}"
+printf '{"mode":"%s","objectKey":"%s","parentObjectKey":"%s","engine":"%s","walLsn":"%s","capturedAt":"%s"}\n' \
+  "${BACKUP_MODE:-full}" "${OBJECT_KEY}" "${PARENT_OBJECT_KEY:-}" "${ENGINE_NAME:-unknown}" \
+  "${WAL_LSN:-}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "${MANIFEST_PATH}"
 MANIFEST_KEY="${OBJECT_KEY}.manifest.json"
 curl -fsS -X PUT -H "Content-Type: application/json" --data-binary @"${MANIFEST_PATH}" \
   "${S3_SCHEME}://${S3_ENDPOINT}/${S3_BUCKET}/${MANIFEST_KEY}" \

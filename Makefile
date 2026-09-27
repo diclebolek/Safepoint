@@ -50,6 +50,10 @@ demo:
 	kubectl apply -f config/demo/grafana-dashboard-configmap.yaml
 	kubectl apply -f config/demo/observability.yaml
 
+harden:
+	kubectl apply -f config/hardening/networkpolicies.yaml
+	kubectl apply -f config/hardening/pdb.yaml
+
 deploy: install-crd install-rbac webhook-certs docker-build-all
 	kubectl apply -f config/webhook/service.yaml
 	kubectl apply -f config/metrics/service.yaml
