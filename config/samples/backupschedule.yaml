@@ -1,17 +1,24 @@
 # Purpose: EXAMPLE BackupSchedule manifests (edit engine/secretRef/destination/schedule).
 # Used by: kubectl apply after secrets exist. One schedule = one DB; duplicate for more DBs.
+#
+# Someone cloning the repo usually copies THIS file, renames it, changes:
+#   - metadata.namespace / metadata.name
+#   - secretRef  (points to their DB password Secret)
+#   - schedule   (how often)
+#   - destination.endpoint / bucket  (where files go)
+#
 apiVersion: backup.goproject.io/v1
 kind: BackupSchedule
 metadata:
   name: shop-db-backup
   namespace: default
 spec:
-  engine: postgres
+  engine: postgres # postgres | mysql | redis | mongodb
   databaseRef: shop-postgres
-  secretRef: shop-postgres-credentials
-  schedule: "*/5 * * * *" # every 5 minutes (demo)
-  retentionDays: 7
-  suspend: false
+  secretRef: shop-postgres-credentials # must exist in same namespace
+  schedule: "*/5 * * * *" # HOW OFTEN -- cron UTC. Example nightly: "0 2 * * *"
+  retentionDays: 7 # keep objects this many days
+  suspend: false # true = pause new backups
   # mode: incremental   # first run auto-promotes to full; later runs chain via status.lastFullObjectKey
   # destinationRef: demo-minio   # OR inline destination below
   destination:
@@ -31,7 +38,7 @@ spec:
   engine: redis
   databaseRef: shop-redis
   secretRef: shop-redis-credentials
-  schedule: "*/10 * * * *"
+  schedule: "*/10 * * * *" # every 10 minutes
   retentionDays: 3
   destination:
     endpoint: minio.minio.svc.cluster.local:9000

@@ -36,6 +36,7 @@ func init() {
 }
 
 func main() {
+	// CLI flags: metrics :8080, health :8081, webhook certs, optional webhooks.
 	var (
 		metricsAddr          string
 		probeAddr            string
@@ -55,6 +56,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	// Manager = shared clients, cache, metrics, webhook server, leader election.
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
@@ -73,6 +75,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Engines (postgres/mysql/redis/mongodb) + Job runner used by the schedule controller.
 	registry := backup.NewRegistry()
 	jobRunner := &runner.JobRunner{
 		Client:   mgr.GetClient(),
@@ -80,6 +83,7 @@ func main() {
 		Registry: registry,
 	}
 
+	// Watch BackupSchedule -> create dump Jobs on cron.
 	if err := (&controller.BackupScheduleReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
@@ -90,6 +94,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Watch BackupRestore -> one-shot restore Jobs.
 	if err := (&controller.BackupRestoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -98,6 +103,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Optional: reject Pods/Deployments that require backup but have no active schedule.
 	if enableWebhooks {
 		decoder := admission.NewDecoder(mgr.GetScheme())
 		mgr.GetWebhookServer().Register("/validate-v1-pod", &webhook.Admission{
@@ -125,6 +131,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Block forever serving reconcile loops until signal.
 	setupLog.Info("starting manager", "engines", "postgres,mysql,redis,mongodb", "webhooks", enableWebhooks)
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")

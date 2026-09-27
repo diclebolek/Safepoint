@@ -1,6 +1,13 @@
 # Purpose: Demo BackupSchedule objects -- one per database to back up.
 # Used by: Safepoint operator (watches these CRs and creates backup Jobs).
 # Edit/add: Copy a BackupSchedule block to protect another DB (multi-DB = multiple schedules).
+#
+# HOW OFTEN? Look at spec.schedule (cron, UTC):
+#   "*/5 * * * *"  = every 5 minutes
+#   "*/10 * * * *" = every 10 minutes
+#   "0 2 * * *"    = every day at 02:00 UTC
+# See current value live:  kubectl -n demo get bks -o custom-columns=NAME:.metadata.name,SCHEDULE:.spec.schedule
+#
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,21 +15,29 @@ metadata:
   namespace: demo
 type: Opaque
 stringData:
+  # Keys used to talk to the demo object store (MinIO/SeaweedFS).
   accessKey: minioadmin
   secretKey: minioadmin
 ---
+# --- Database #1: Postgres "shop" ---
 apiVersion: backup.goproject.io/v1
 kind: BackupSchedule
 metadata:
   name: shop-db-backup
   namespace: demo
 spec:
+  # Which dump tool to use: postgres | mysql | redis | mongodb
   engine: postgres
+  # Logical name (must match webhook annotation backup.goproject.io/database-name if used)
   databaseRef: shop-postgres
+  # Secret that contains host/user/password/database for THIS db
   secretRef: shop-postgres-credentials
-  schedule: "*/5 * * * *"
+  # HOW OFTEN this DB is backed up (change me to change frequency)
+  schedule: "*/5 * * * *" # every 5 minutes
+  # Delete objects older than N days from the bucket
   retentionDays: 7
   destination:
+    # Where to upload the .dump.gz file
     endpoint: minio.demo.svc.cluster.local:9000
     bucket: db-backups
     prefix: postgres/shop
@@ -30,6 +45,7 @@ spec:
     credentialsSecretRef: minio-credentials
     useSSL: false
 ---
+# --- Database #2: Redis "shop" (second schedule = second DB) ---
 apiVersion: backup.goproject.io/v1
 kind: BackupSchedule
 metadata:
@@ -39,7 +55,7 @@ spec:
   engine: redis
   databaseRef: shop-redis
   secretRef: shop-redis-credentials
-  schedule: "*/10 * * * *"
+  schedule: "*/10 * * * *" # every 10 minutes -- change this string to change frequency
   retentionDays: 3
   destination:
     endpoint: minio.demo.svc.cluster.local:9000

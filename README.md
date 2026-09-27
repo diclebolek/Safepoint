@@ -24,18 +24,19 @@ Safepoint schedules, runs, and verifies backups for stateful workloads on Kubern
 7. [Prerequisites](#prerequisites)
 8. [Install Safepoint (full guide)](#install-safepoint-full-guide)
 9. [What is “installing the operator”?](#what-is-installing-the-operator)
-10. [Multiple databases + what to change when you clone](#multiple-databases--what-to-change-when-you-clone)
-11. [How to use (what / where / how)](#how-to-use-what--where--how)
-12. [Use Safepoint day to day](#use-safepoint-day-to-day)
-13. [Demo stack (Postgres + Redis + MinIO)](#demo-stack-postgres--redis--minio)
-14. [Custom Resource reference](#custom-resource-reference)
-15. [Admission webhook](#admission-webhook)
-16. [Security model](#security-model)
-17. [Project layout](#project-layout)
-18. [Development & CI](#development--ci)
-19. [Roadmap](#roadmap)
-20. [CV / talking points](#cv--talking-points)
-21. [License](#license)
+10. [Türkçe: ne sıklıkla yedek? / başkası ne değiştirir?](#türkçe-ne-sıklıkla-yedek--başkası-ne-değiştirir-çok-basit)
+11. [Multiple databases + what to change when you clone](#multiple-databases--what-to-change-when-you-clone)
+12. [How to use (what / where / how)](#how-to-use-what--where--how)
+13. [Use Safepoint day to day](#use-safepoint-day-to-day)
+14. [Demo stack (Postgres + Redis + MinIO)](#demo-stack-postgres--redis--minio)
+15. [Custom Resource reference](#custom-resource-reference)
+16. [Admission webhook](#admission-webhook)
+17. [Security model](#security-model)
+18. [Project layout](#project-layout)
+19. [Development & CI](#development--ci)
+20. [Roadmap](#roadmap)
+21. [CV / talking points](#cv--talking-points)
+22. [License](#license)
 
 ---
 
@@ -287,6 +288,60 @@ The **operator** is the Safepoint Go program (`cmd/main.go`) running **inside yo
 
 After that, the operator **watches** `BackupSchedule` objects and creates backup Jobs automatically.  
 You do **not** run backups by hand every day — you apply YAML once; the operator keeps working.
+
+---
+
+## Türkçe: ne sıklıkla yedek? / başkası ne değiştirir? (çok basit)
+
+### Ne kadar sürede bir yedek alınıyor? Nasıl görürüm?
+
+Dosyada `spec.schedule` satırına bak (cron, UTC saati):
+
+| `schedule` değeri | Anlamı |
+|-------------------|--------|
+| `"*/5 * * * *"` | Her **5 dakikada** bir |
+| `"*/10 * * * *"` | Her **10 dakikada** bir |
+| `"0 2 * * *"` | Her gün saat **02:00** (UTC) |
+
+Canlı cluster’da görmek:
+
+```powershell
+kubectl -n demo get bks -o custom-columns=NAME:.metadata.name,SCHEDULE:.spec.schedule,LAST:.status.lastBackupTime
+```
+
+Demo şu an: Postgres `*/5`, Redis `*/10` → `config/demo/backupschedules.yaml`.
+
+### Nasıl değiştiririm?
+
+1. `config/demo/backupschedules.yaml` içinde `schedule:` satırını değiştir  
+   (ör. `"0 3 * * *"` = her gece 03:00 UTC)
+2. Uygula:
+
+```powershell
+kubectl apply -f config/demo/backupschedules.yaml
+kubectl -n demo get bks
+```
+
+### Başkası projeyi indirince neyi değiştirir? (aptalca)
+
+Düşün: üç ayrı iş var.
+
+1. **Hangi veritabanı?**  
+   → Şifre/adres dosyası: `config/samples/secrets.yaml`  
+   (`host`, `password`, `database` değiştir)
+
+2. **Ne sıklıkla + o DB’yi kaydet?**  
+   → `config/samples/backupschedule.yaml`  
+   (`secretRef` = yukarıdaki Secret adı, `schedule` = sıklık)  
+   İkinci DB istiyorsa: **aynı dosyaya yeni bir `BackupSchedule` bloğu ekler** (veya yeni dosya).
+
+3. **Grafana ekranı (opsiyonel)**  
+   → Sadece `config/demo/observability.yaml`  
+   (şifre / anonim giriş). **DB seçmez.**
+
+Sırayla: önce Secret, sonra BackupSchedule, `kubectl apply -f ...`.
+
+Operator kurmak = Safepoint programını cluster’da Pod olarak çalıştırmak (`config/manager/deployment.yaml`). O Pod YAML’ları okuyup yedeği kendi alır.
 
 ---
 

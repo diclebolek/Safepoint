@@ -1,6 +1,10 @@
 # Purpose: Demo Postgres Deployment + connection Secret for shop-db-backup.
 # Used by: BackupSchedule secretRef shop-postgres-credentials (host/user/password/database).
 # Note: Labeled require-backup so the admission webhook enforces a schedule exists.
+#
+# This Secret answers: "WHERE is the database and HOW do I log in?"
+# The BackupSchedule answers: "HOW OFTEN do I back it up?"
+#
 apiVersion: v1
 kind: Secret
 metadata:
@@ -10,8 +14,8 @@ type: Opaque
 stringData:
   username: postgres
   password: postgres
-  database: shop
-  host: shop-postgres.demo.svc.cluster.local
+  database: shop # DB name inside the Postgres server
+  host: shop-postgres.demo.svc.cluster.local # Service DNS inside the cluster
   port: "5432"
 ---
 apiVersion: apps/v1
