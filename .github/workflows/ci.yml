@@ -1,3 +1,9 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   GitHub Actions CI: go vet/test, envtest, build, helm lint, docker build.
+#   push/PR olunca otomatik calisir; kodun kirilmadigini dogrular.
+# =============================================================================
+
 name: ci
 
 on:

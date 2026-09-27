@@ -1,4 +1,10 @@
-﻿.PHONY: tidy build test vet run docker-build docker-build-all demo webhook-certs deploy gencerts ci
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Kisayol komutlari: build, test, docker-build, demo apply, cert uretimi.
+#   Windows'ta make yoksa ayni satirlari elle (go/docker/kubectl) calistir.
+# =============================================================================
+
+.PHONY: tidy build test vet run docker-build docker-build-all demo webhook-certs deploy gencerts ci
 
 tidy:
 	go mod tidy

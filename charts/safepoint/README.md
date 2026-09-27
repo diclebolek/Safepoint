@@ -1,3 +1,8 @@
+<!--
+Bu dosya ne ise yarar?
+  Helm chart kurulum kisayollari (charts/safepoint).
+  Operator'u helm ile yuklemek icin ornek komutlar.
+-->
 ## Safepoint Helm Chart
 
 ```powershell

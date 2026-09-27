@@ -1,3 +1,9 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Helm ile kurulumda varsayilan degerler (image, replica, webhook, metrics...).
+#   Ozellestirmek icin: helm upgrade --install ... -f my-values.yaml
+# =============================================================================
+
 replicaCount: 1
 
 image:

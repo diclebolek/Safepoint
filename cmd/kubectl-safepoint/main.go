@@ -1,5 +1,10 @@
-// kubectl-safepoint is a kubectl plugin: place the binary on PATH as kubectl-safepoint
-// then run: kubectl safepoint status
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   kubectl eklentisi: "kubectl safepoint status|schedules|restores"
+//   Binary adi PATH'te kubectl-safepoint olmali.
+//   Build: go build -o kubectl-safepoint.exe ./cmd/kubectl-safepoint
+// =============================================================================
+
 package main
 
 import (

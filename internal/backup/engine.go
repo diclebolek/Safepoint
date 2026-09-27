@@ -1,5 +1,8 @@
-// Package backup builds engine-specific dump/restore Job specs, object keys,
-// retention helpers, encryption hooks, and destination profile resolution.
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   Engine arayuzu, Job iskeleti, object key, upload script (curl/S3), encryption env.
+// =============================================================================
+
 package backup
 
 import (

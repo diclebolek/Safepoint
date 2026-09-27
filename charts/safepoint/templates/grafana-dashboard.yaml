@@ -1,3 +1,8 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Helm sablonu: Grafana dashboard ConfigMap (dashboards/safepoint.json).
+# =============================================================================
+
 apiVersion: v1
 kind: ConfigMap
 metadata:

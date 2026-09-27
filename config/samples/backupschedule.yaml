@@ -1,12 +1,15 @@
-# Purpose: EXAMPLE BackupSchedule manifests (edit engine/secretRef/destination/schedule).
-# Used by: kubectl apply after secrets exist. One schedule = one DB; duplicate for more DBs.
+# =============================================================================
+# Bu dosya ne ise yarar? (ORNEK / sablon)
+#   "Su DB'yi su siklikla su dolaba yedekle" politikasi.
+#   Bir BackupSchedule = bir DB. Ikinci DB icin blogu kopyala / yeni dosya yaz.
 #
-# Someone cloning the repo usually copies THIS file, renames it, changes:
-#   - metadata.namespace / metadata.name
-#   - secretRef  (points to their DB password Secret)
-#   - schedule   (how often)
-#   - destination.endpoint / bucket  (where files go)
-#
+# Kritik alanlar:
+#   schedule   -> ne siklikla (cron UTC)
+#   secretRef  -> secrets.yaml'daki Secret adi
+#   destination / destinationRef -> yedek nereye gidecek
+# Uygulama: kubectl apply -f config/samples/backupschedule.yaml
+# =============================================================================
+
 apiVersion: backup.goproject.io/v1
 kind: BackupSchedule
 metadata:

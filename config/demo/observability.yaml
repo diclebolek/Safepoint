@@ -1,7 +1,19 @@
-# Purpose: Demo Prometheus + Alertmanager + Grafana stack for Safepoint metrics.
-# Used by: Humans watching backup success/failure (port-forward grafana:3000).
-# Not used for: choosing which DB to back up (that is BackupSchedule YAML).
-# Lightweight Prometheus + Alertmanager + Grafana for local demo (Docker Desktop).
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Prometheus (metrik toplama) + Alertmanager (alarm) + Grafana (grafik ekrani).
+#   Hangi DB yedeklenecegini SECMEZ; sadece operator metriklerini gosterir.
+#
+# Kim kullanir?
+#   Insanlar: kubectl -n demo port-forward svc/grafana 3000:3000
+#
+# Ne degistirilir?
+#   GF_SECURITY_ADMIN_PASSWORD     -> Grafana sifresi
+#   GF_AUTH_ANONYMOUS_ENABLED      -> "true"=girissiz bak, "false"=sadece login
+#   alertmanager-config            -> Slack/email (yorumda ornek var)
+#
+# Uygulama: kubectl apply -f config/demo/observability.yaml
+# =============================================================================
+
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   BackupRestore CRD Go tipi: tek seferlik geri yukleme istegi.
+// =============================================================================
+
 package v1
 
 import (

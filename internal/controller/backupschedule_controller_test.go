@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   BackupSchedule controller birim testleri (fake client).
+// =============================================================================
+
 package controller_test
 
 import (

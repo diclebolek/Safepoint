@@ -1,4 +1,8 @@
-// Package storage defines object-storage abstractions used by the operator.
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   ObjectStore arayuzu (Upload/List/Delete) -- retention icin kullanilir.
+// =============================================================================
+
 package storage
 
 import (

@@ -1,3 +1,8 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   golangci-lint ayarlari (statik analiz / kod kalitesi).
+# =============================================================================
+
 # https://golangci-lint.run/
 run:
   timeout: 5m

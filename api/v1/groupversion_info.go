@@ -1,4 +1,8 @@
-// Package v1 contains API Schema definitions for the backup v1 API group.
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   API grup/version kaydi: backup.goproject.io / v1 (SchemeBuilder).
+// =============================================================================
+
 package v1
 
 import (

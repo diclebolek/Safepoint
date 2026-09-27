@@ -1,3 +1,8 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Helm chart kimligi (isim, surum). helm install/upgrade charts/safepoint
+# =============================================================================
+
 apiVersion: v2
 name: safepoint
 description: Kubernetes-native database backup operator with policy enforcement

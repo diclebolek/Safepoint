@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   BackupRestore reconcile: S3'ten objectKey indirip DB'ye restore Job'u acar.
+// =============================================================================
+
 package controller
 
 import (

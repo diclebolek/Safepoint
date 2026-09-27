@@ -1,3 +1,8 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Helm sablonu: /metrics Service (+ opsiyonel ServiceMonitor).
+# =============================================================================
+
 {{- if .Values.metrics.enabled }}
 apiVersion: v1
 kind: Service

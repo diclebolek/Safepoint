@@ -1,3 +1,11 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Webhook TLS sertifikasi uretir, Secret + ValidatingWebhookConfiguration caBundle
+#   gunceller. Operator'un admission webhook'unun calismasi icin gerekir.
+#
+# Kullanim (repo kokunden):
+#   .\scripts\gen-webhook-certs.ps1
+# =============================================================================
 # Generates webhook TLS material and (if a cluster is available) applies Secret + caBundle.
 #
 # Usage (from repo root):

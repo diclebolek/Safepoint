@@ -1,5 +1,13 @@
-# Purpose: Grafana dashboard JSON for Safepoint (provisioned into Grafana).
-# Used by: config/demo/observability.yaml (mounted at /var/lib/grafana/dashboards).
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Grafana'ya otomatik yuklenen "Safepoint Backups" dashboard JSON'unu tasir.
+#   observability.yaml Grafana Pod'una bu ConfigMap'i volume olarak baglar.
+#
+# Ne degistirilir?
+#   Genelde dokunma; panel sorgulari charts/safepoint/dashboards/safepoint.json
+#   kaynagindan uretilir. Degistirince bu ConfigMap'i yeniden generate/apply et.
+# =============================================================================
+
 apiVersion: v1
 kind: ConfigMap
 metadata:

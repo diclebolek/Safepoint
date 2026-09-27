@@ -1,5 +1,9 @@
-﻿// Package controller implements Kubernetes reconcile loops for Safepoint CRs
-// (BackupSchedule, BackupRestore) and helpers such as destination resolution.
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   BackupSchedule reconcile dongusu: cron zamanı gelince Job olusturur,
+//   Job bitince status/phase/lastObjectKey gunceller, retention uygular, metrik yazar.
+// =============================================================================
+
 package controller
 
 import (

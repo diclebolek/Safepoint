@@ -1,5 +1,12 @@
-# Purpose: ServiceAccount + ClusterRole/Binding so the operator can watch CRs, Jobs, Secrets.
-# Used by: backup-operator Deployment (serviceAccountName: backup-operator).
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Operator'un Kubernetes API'sinde neye izinli oldugunu tanimlar
+#   (BackupSchedule okuma/yazma, Job olusturma, Secret okuma, vb.).
+#
+# ServiceAccount backup-operator -> ClusterRole -> ClusterRoleBinding.
+# Uygulama: kubectl apply -f config/rbac/role.yaml
+# =============================================================================
+
 apiVersion: v1
 kind: ServiceAccount
 metadata:

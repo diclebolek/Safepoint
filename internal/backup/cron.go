@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   Cron ifade dogrulama / sonraki calisma zamani yardimcilari.
+// =============================================================================
+
 package backup
 
 import (

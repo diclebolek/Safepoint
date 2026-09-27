@@ -1,13 +1,22 @@
-# Purpose: Demo BackupSchedule objects -- one per database to back up.
-# Used by: Safepoint operator (watches these CRs and creates backup Jobs).
-# Edit/add: Copy a BackupSchedule block to protect another DB (multi-DB = multiple schedules).
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Demo ortaminda HANGI veritabanlarinin NE SIKLIKLA yedeklenecegini tanimlar.
+#   Her "BackupSchedule" = 1 veritabani. Iki blok = Postgres + Redis.
 #
-# HOW OFTEN? Look at spec.schedule (cron, UTC):
-#   "*/5 * * * *"  = every 5 minutes
-#   "*/10 * * * *" = every 10 minutes
-#   "0 2 * * *"    = every day at 02:00 UTC
-# See current value live:  kubectl -n demo get bks -o custom-columns=NAME:.metadata.name,SCHEDULE:.spec.schedule
+# Kim kullanir?
+#   Safepoint operatoru bu CR'lari izler; zaman gelince Kubernetes Job acar.
 #
+# Ne degistirilir?
+#   - spec.schedule  -> ne siklikla (ornek: "*/5 * * * *" = 5 dk, "0 2 * * *" = gece 02:00)
+#   - secretRef      -> hangi Secret'tan DB sifresi/host okunacak
+#   - destination    -> yedek dosyasi nereye yuklenecek (MinIO/S3)
+#   Yeni DB eklemek  -> asagiya yeni bir BackupSchedule blogu kopyala
+#
+# Uygulama:
+#   kubectl apply -f config/demo/backupschedules.yaml
+#   kubectl -n demo get bks
+# =============================================================================
+
 apiVersion: v1
 kind: Secret
 metadata:

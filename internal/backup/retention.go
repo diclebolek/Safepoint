@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   retentionDays'e gore silinecek eski object key listesini hesaplar.
+// =============================================================================
+
 package backup
 
 import (

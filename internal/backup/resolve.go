@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   destination vs destinationRef cozumleme; incremental/full mod secimi.
+// =============================================================================
+
 package backup
 
 import (

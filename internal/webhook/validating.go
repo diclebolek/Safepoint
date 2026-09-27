@@ -1,4 +1,8 @@
-// Package webhook provides admission validation for backup-related resources.
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   Admission webhook: yedek politikasi olmayan korumali Pod/Deployment'i reddeder.
+// =============================================================================
+
 package webhook
 
 import (

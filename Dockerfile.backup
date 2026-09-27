@@ -1,5 +1,9 @@
-# syntax=docker/dockerfile:1
-# Purpose: Hardened Job image with dump/restore clients (postgres/redis/mysql) + openssl + curl.
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Yedek/restore Job'larinin kullandigi image: pg_dump, redis-cli, openssl, curl...
+#   Ornek: docker build -t safepoint-backup:dev -f Dockerfile.backup .
+# =============================================================================
+
 FROM alpine:3.20
 RUN apk add --no-cache \
       bash curl ca-certificates gzip openssl \

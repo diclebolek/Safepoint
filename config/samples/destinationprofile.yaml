@@ -1,5 +1,10 @@
-# Purpose: EXAMPLE reusable S3 destination (DestinationProfile / shortName bdp).
-# Used by: BackupSchedule.spec.destinationRef instead of repeating inline destination.
+# =============================================================================
+# Bu dosya ne ise yarar? (ORNEK)
+#   S3/MinIO adresini bir kez tanimla; birden fazla BackupSchedule destinationRef
+#   ile ayni dolabi kullansin (tekrar tekrar endpoint yazma).
+# Uygulama: kubectl apply -f config/samples/destinationprofile.yaml
+# =============================================================================
+
 apiVersion: backup.goproject.io/v1
 kind: DestinationProfile
 metadata:

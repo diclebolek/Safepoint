@@ -1,4 +1,9 @@
-// Package metrics registers Prometheus counters/histograms for backup and restore outcomes.
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   Prometheus metrik kayitlari (backup/restore success/failure/duration).
+//   Grafana bu serileri /metrics uzerinden gosterir.
+// =============================================================================
+
 package metrics
 
 import (

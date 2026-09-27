@@ -1,3 +1,8 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Helm sablonu: operator Deployment'ini values.yaml degerleriyle uretir.
+# =============================================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

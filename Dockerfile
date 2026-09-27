@@ -1,5 +1,9 @@
-# syntax=docker/dockerfile:1
-# Purpose: Build the Safepoint operator image (manager binary) for Kubernetes.
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Safepoint operator container image'ini uretir (cmd/main.go -> /manager).
+#   Ornek: docker build -t backup-operator:dev .
+# =============================================================================
+
 FROM golang:1.27-alpine AS builder
 WORKDIR /workspace
 COPY go.mod go.sum ./

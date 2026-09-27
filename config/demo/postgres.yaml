@@ -1,10 +1,18 @@
-# Purpose: Demo Postgres Deployment + connection Secret for shop-db-backup.
-# Used by: BackupSchedule secretRef shop-postgres-credentials (host/user/password/database).
-# Note: Labeled require-backup so the admission webhook enforces a schedule exists.
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Demo Postgres veritabanini (Deployment) ve baglanti Secret'ini olusturur.
+#   Secret icinde host/user/password/database vardir; BackupSchedule bunu kullanir.
 #
-# This Secret answers: "WHERE is the database and HOW do I log in?"
-# The BackupSchedule answers: "HOW OFTEN do I back it up?"
+# Kim kullanir?
+#   shop-db-backup schedule'i secretRef: shop-postgres-credentials ile buraya bakar.
 #
+# Ne degistirilir?
+#   stringData.host / password / database  -> gercek DB adresin
+#   Label require-backup=true             -> webhook yedeksiz deploy'u reddeder
+#
+# Uygulama: kubectl apply -f config/demo/postgres.yaml
+# =============================================================================
+
 apiVersion: v1
 kind: Secret
 metadata:

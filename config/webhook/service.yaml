@@ -1,5 +1,10 @@
-# Purpose: ClusterIP Service for the validating admission webhook (TLS on 443->9443).
-# Used by: ValidatingWebhookConfiguration + operator webhook server.
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Admission webhook icin ClusterIP Service (API server -> operator TLS 9443).
+#   Yedeksiz Deployment/Pod engelleme bu kanal uzerinden calisir.
+# Uygulama: kubectl apply -f config/webhook/service.yaml
+# =============================================================================
+
 apiVersion: v1
 kind: Service
 metadata:

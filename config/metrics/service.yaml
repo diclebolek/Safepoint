@@ -1,5 +1,10 @@
-# Purpose: Expose operator Prometheus metrics on port 8080 inside the cluster.
-# Used by: Prometheus scrape job in config/demo/observability.yaml.
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Operator metriklerini cluster icinden HTTP :8080/metrics olarak yayinlar.
+#   Prometheus bu Service'i scrape eder (observability.yaml icinde hedef adres).
+# Uygulama: kubectl apply -f config/metrics/service.yaml
+# =============================================================================
+
 apiVersion: v1
 kind: Service
 metadata:

@@ -1,3 +1,7 @@
+// =============================================================================
+// Bu dosya ne ise yarar? DestinationProfile / backup mode cozumleme testleri.
+// =============================================================================
+
 package backup_test
 
 import (

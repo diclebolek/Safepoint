@@ -1,5 +1,13 @@
-# Purpose: Demo Redis Deployment + connection Secret for shop-redis-backup.
-# Used by: BackupSchedule secretRef shop-redis-credentials.
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Demo Redis sunucusunu ve baglanti Secret'ini olusturur.
+#   shop-redis-backup schedule'i bu Secret ile Redis yedegi alir.
+#
+# Ne degistirilir?
+#   host / password  -> kendi Redis'in
+# Uygulama: kubectl apply -f config/demo/redis.yaml
+# =============================================================================
+
 apiVersion: v1
 kind: Secret
 metadata:

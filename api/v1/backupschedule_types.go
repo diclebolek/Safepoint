@@ -1,3 +1,9 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   BackupSchedule CRD'nin Go tip tanimi (spec/status alanlari).
+//   Kubernetes YAML'inda gordugun engine, schedule, destination buradan gelir.
+// =============================================================================
+
 package v1
 
 import (

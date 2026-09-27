@@ -1,5 +1,11 @@
-# Purpose: EXAMPLE BackupRestore -- one-shot restore from an objectKey in the bucket.
-# Used by: Set objectKey from kubectl get bks ... -o jsonpath={.status.lastObjectKey}
+# =============================================================================
+# Bu dosya ne ise yarar? (ORNEK)
+#   Bucket'taki bir yedek dosyasini (objectKey) tekrar DB'ye yuklemek icin.
+#   objectKey'i su komuttan al:
+#     kubectl get bks <isim> -n <ns> -o jsonpath="{.status.lastObjectKey}"
+# Uygulama: kubectl apply -f config/samples/backuprestore.yaml
+# =============================================================================
+
 apiVersion: backup.goproject.io/v1
 kind: BackupRestore
 metadata:

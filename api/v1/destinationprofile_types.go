@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   DestinationProfile CRD Go tipi: paylasilan S3/MinIO hedef tanimi.
+// =============================================================================
+
 package v1
 
 import (

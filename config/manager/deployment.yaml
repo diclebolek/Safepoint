@@ -1,6 +1,16 @@
-# Purpose: Run the Safepoint operator Pod in namespace backup-system.
-# Used by: Cluster control plane -- this IS "installing the operator".
-# Image: backup-operator:dev (build locally) or a GHCR tag in real use.
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Safepoint OPERATOR'unu cluster icinde Pod olarak calistirir.
+#   "Operator kurmak" = bu Deployment'i (ve CRD/RBAC/webhook) apply etmek demektir.
+#
+# Ne yapar Pod?
+#   BackupSchedule/BackupRestore izler, Job acar, metrik :8080, webhook :9443.
+#
+# Ne degistirilir?
+#   image: backup-operator:dev  -> yerelde build; production'da ghcr.io/... tag
+# Uygulama: kubectl apply -f config/manager/deployment.yaml
+# =============================================================================
+
 apiVersion: v1
 kind: Namespace
 metadata:

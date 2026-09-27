@@ -1,6 +1,17 @@
-# Purpose: Demo S3-compatible object storage (SeaweedFS, Service name still "minio").
-# Used by: BackupSchedule destination endpoint minio.demo.svc.cluster.local:9000
-# Creates: demo namespace, credentials Secret, Deployment/Service, optional bucket Job.
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Yedek dosyalarinin konulacagi "dosya dolabi"ni (S3 uyumlu storage) kurar.
+#   Service adi minio; image genelde SeaweedFS (MinIO API uyumlu).
+#
+# Kim kullanir?
+#   BackupSchedule destination.endpoint = minio.demo.svc.cluster.local:9000
+#
+# Ne degistirilir?
+#   Demo icin genelde dokunma. Gercek hayatta AWS S3 / sirket MinIO endpoint'i kullan.
+# Uygulama: kubectl apply -f config/demo/minio.yaml
+#   Sonra bucket: weed shell ile db-backups olusturulur (README).
+# =============================================================================
+
 apiVersion: v1
 kind: Namespace
 metadata:

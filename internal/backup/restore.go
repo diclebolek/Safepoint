@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   Restore Job script'leri (indir, gerekirse decrypt, pg_restore/mysql/...).
+// =============================================================================
+
 package backup
 
 import (

@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   Postgres/MySQL/Redis/Mongo dump komutlarinin somut implementasyonlari.
+// =============================================================================
+
 package backup
 
 import (

@@ -1,3 +1,8 @@
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   MinIO/S3 uyumlu ObjectStore implementasyonu (minio-go client).
+// =============================================================================
+
 package storage
 
 import (

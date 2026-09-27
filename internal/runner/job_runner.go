@@ -1,4 +1,9 @@
-// Package runner creates and observes Kubernetes Jobs for BackupSchedule runs.
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   Backup Job'larini olusturur ve durumunu okur (Running/Succeeded/Failed).
+//   DestinationProfile cozumleme, encryption, object key, engine BuildJob burada baglanir.
+// =============================================================================
+
 package runner
 
 import (

@@ -1,5 +1,11 @@
 //go:build envtest
 
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   envtest ile gercek API server'a yakin entegrasyon testi (-tags=envtest).
+//   Normal "go test ./..." bu dosyayi CALISTIRMAZ; sadece -tags=envtest ile gelir.
+// =============================================================================
+
 package controller_test
 
 import (

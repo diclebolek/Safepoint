@@ -1,3 +1,8 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   main/tag push'ta operator + backup image'larini GHCR'a yayinlar ve cosign imzalar.
+# =============================================================================
+
 name: release
 
 on:

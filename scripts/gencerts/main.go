@@ -1,6 +1,9 @@
-// Command gencerts creates a self-signed CA + server certificate for the webhook.
-//
-//	go run ./scripts/gencerts -out config/webhook/certs
+// =============================================================================
+// Bu dosya ne ise yarar?
+//   Webhook icin self-signed TLS sertifikasi uretir (config/webhook/certs).
+//   Ornek: go run ./scripts/gencerts -out config/webhook/certs
+// =============================================================================
+
 package main
 
 import (
