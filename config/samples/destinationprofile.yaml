@@ -1,0 +1,11 @@
+apiVersion: backup.goproject.io/v1
+kind: DestinationProfile
+metadata:
+  name: demo-minio
+  namespace: demo
+spec:
+  endpoint: minio.demo.svc.cluster.local:9000
+  bucket: db-backups
+  region: us-east-1
+  credentialsSecretRef: minio-credentials
+  useSSL: false

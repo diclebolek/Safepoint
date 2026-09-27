@@ -27,8 +27,14 @@ type BackupRestoreSpec struct {
 	// ObjectKey is the object storage key to restore (e.g. demo/shop/...dump.gz).
 	ObjectKey string `json:"objectKey"`
 
-	// Destination is the S3-compatible source of the backup object.
-	Destination ObjectStorageSpec `json:"destination"`
+	// Destination is the S3-compatible source of the backup object (inline).
+	// Exactly one of Destination or DestinationRef must be set.
+	// +optional
+	Destination *ObjectStorageSpec `json:"destination,omitempty"`
+
+	// DestinationRef references a DestinationProfile in the same namespace.
+	// +optional
+	DestinationRef string `json:"destinationRef,omitempty"`
 
 	// BackupImage overrides the restore Job image.
 	// +optional

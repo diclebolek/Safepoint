@@ -28,10 +28,12 @@ const (
 
 // Result is returned by CreateJob / GetJob.
 type Result struct {
-	Outcome   JobOutcome
-	JobName   string
-	ObjectKey string
-	Message   string
+	Outcome           JobOutcome
+	JobName           string
+	ObjectKey         string
+	Mode              backupv1.BackupMode
+	ParentObjectKey   string
+	Message           string
 }
 
 // JobRunner creates and observes per-schedule backup Jobs.
@@ -80,7 +82,12 @@ func (r *JobRunner) CreateJob(ctx context.Context, schedule *backupv1.BackupSche
 		return Result{}, err
 	}
 
-	storeSecret, err := readSecret(ctx, r.Client, schedule.Namespace, schedule.Spec.Destination.CredentialsSecretRef)
+	dest, err := backup.ResolveDestination(ctx, r.Client, schedule.Namespace, schedule.Spec.Destination, schedule.Spec.DestinationRef)
+	if err != nil {
+		return Result{}, err
+	}
+
+	storeSecret, err := readSecret(ctx, r.Client, schedule.Namespace, dest.CredentialsSecretRef)
 	if err != nil {
 		return Result{}, err
 	}
@@ -89,7 +96,7 @@ func (r *JobRunner) CreateJob(ctx context.Context, schedule *backupv1.BackupSche
 		return Result{}, err
 	}
 
-	region := schedule.Spec.Destination.Region
+	region := dest.Region
 	if region == "" {
 		region = "us-east-1"
 	}
@@ -110,9 +117,11 @@ func (r *JobRunner) CreateJob(ctx context.Context, schedule *backupv1.BackupSche
 		enc = backup.EncryptionEnv{Enabled: true, Passphrase: pass}
 	}
 
+	mode, parent := backup.ResolveBackupMode(schedule)
 	objectKey := backup.ObjectKey(
 		schedule.Namespace,
 		schedule.Name,
+		string(mode),
 		string(engineName),
 		backup.EncryptedExtension(engine.FileExtension(), enc.Enabled),
 		r.now(),
@@ -122,14 +131,16 @@ func (r *JobRunner) CreateJob(ctx context.Context, schedule *backupv1.BackupSche
 		Schedule:  schedule,
 		Target:    target,
 		ObjectKey: objectKey,
+		Mode:      mode,
+		ParentKey: parent,
 		Storage: backup.StorageEnv{
-			Endpoint:  schedule.Spec.Destination.Endpoint,
-			Bucket:    schedule.Spec.Destination.Bucket,
-			Prefix:    schedule.Spec.Destination.Prefix,
+			Endpoint:  dest.Endpoint,
+			Bucket:    dest.Bucket,
+			Prefix:    dest.Prefix,
 			Region:    region,
 			AccessKey: accessKey,
 			SecretKey: secretKey,
-			UseSSL:    schedule.Spec.Destination.UseSSL,
+			UseSSL:    dest.UseSSL,
 		},
 		Encryption: enc,
 	})
@@ -145,36 +156,46 @@ func (r *JobRunner) CreateJob(ctx context.Context, schedule *backupv1.BackupSche
 	}
 
 	return Result{
-		Outcome:   JobRunning,
-		JobName:   job.Name,
-		ObjectKey: objectKey,
-		Message:   "backup job created",
+		Outcome:         JobRunning,
+		JobName:         job.Name,
+		ObjectKey:       objectKey,
+		Mode:            mode,
+		ParentObjectKey: parent,
+		Message:         "backup job created",
 	}, nil
 }
 
 func inspectJob(job *batchv1.Job) Result {
 	objectKey := job.Annotations[backup.AnnotationObjectKey]
+	mode := backupv1.BackupMode(job.Annotations[backup.AnnotationMode])
+	parent := job.Annotations[backup.AnnotationParentKey]
 	if job.Status.Succeeded > 0 {
 		return Result{
-			Outcome:   JobSucceeded,
-			JobName:   job.Name,
-			ObjectKey: objectKey,
-			Message:   "backup job succeeded",
+			Outcome:         JobSucceeded,
+			JobName:         job.Name,
+			ObjectKey:       objectKey,
+			Mode:            mode,
+			ParentObjectKey: parent,
+			Message:         "backup job succeeded",
 		}
 	}
 	if job.Status.Failed > 0 {
 		return Result{
-			Outcome:   JobFailed,
-			JobName:   job.Name,
-			ObjectKey: objectKey,
-			Message:   "backup job failed",
+			Outcome:         JobFailed,
+			JobName:         job.Name,
+			ObjectKey:       objectKey,
+			Mode:            mode,
+			ParentObjectKey: parent,
+			Message:         "backup job failed",
 		}
 	}
 	return Result{
-		Outcome:   JobRunning,
-		JobName:   job.Name,
-		ObjectKey: objectKey,
-		Message:   "backup job running",
+		Outcome:         JobRunning,
+		JobName:         job.Name,
+		ObjectKey:       objectKey,
+		Mode:            mode,
+		ParentObjectKey: parent,
+		Message:         "backup job running",
 	}
 }
 

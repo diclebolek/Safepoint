@@ -68,7 +68,11 @@ func (in *BackupScheduleList) DeepCopyObject() runtime.Object {
 // DeepCopyInto copies the receiver into out.
 func (in *BackupScheduleSpec) DeepCopyInto(out *BackupScheduleSpec) {
 	*out = *in
-	out.Destination = in.Destination
+	if in.Destination != nil {
+		in, out := &in.Destination, &out.Destination
+		*out = new(ObjectStorageSpec)
+		**out = **in
+	}
 	if in.ActiveDeadlineSeconds != nil {
 		in, out := &in.ActiveDeadlineSeconds, &out.ActiveDeadlineSeconds
 		*out = new(int64)
@@ -198,7 +202,11 @@ func (in *BackupRestoreList) DeepCopyObject() runtime.Object {
 // DeepCopyInto copies the receiver into out.
 func (in *BackupRestoreSpec) DeepCopyInto(out *BackupRestoreSpec) {
 	*out = *in
-	out.Destination = in.Destination
+	if in.Destination != nil {
+		in, out := &in.Destination, &out.Destination
+		*out = new(ObjectStorageSpec)
+		**out = **in
+	}
 	if in.ActiveDeadlineSeconds != nil {
 		in, out := &in.ActiveDeadlineSeconds, &out.ActiveDeadlineSeconds
 		*out = new(int64)
@@ -236,6 +244,80 @@ func (in *BackupRestoreStatus) DeepCopy() *BackupRestoreStatus {
 		return nil
 	}
 	out := new(BackupRestoreStatus)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto copies the receiver into out.
+func (in *DestinationProfile) DeepCopyInto(out *DestinationProfile) {
+	*out = *in
+	out.TypeMeta = in.TypeMeta
+	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	out.Spec = in.Spec
+	out.Status = in.Status
+}
+
+// DeepCopy creates a new DestinationProfile.
+func (in *DestinationProfile) DeepCopy() *DestinationProfile {
+	if in == nil {
+		return nil
+	}
+	out := new(DestinationProfile)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyObject implements runtime.Object.
+func (in *DestinationProfile) DeepCopyObject() runtime.Object {
+	if c := in.DeepCopy(); c != nil {
+		return c
+	}
+	return nil
+}
+
+// DeepCopyInto copies the receiver into out.
+func (in *DestinationProfileList) DeepCopyInto(out *DestinationProfileList) {
+	*out = *in
+	out.TypeMeta = in.TypeMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]DestinationProfile, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+}
+
+// DeepCopy creates a new DestinationProfileList.
+func (in *DestinationProfileList) DeepCopy() *DestinationProfileList {
+	if in == nil {
+		return nil
+	}
+	out := new(DestinationProfileList)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyObject implements runtime.Object.
+func (in *DestinationProfileList) DeepCopyObject() runtime.Object {
+	if c := in.DeepCopy(); c != nil {
+		return c
+	}
+	return nil
+}
+
+// DeepCopyInto copies the receiver into out.
+func (in *DestinationProfileSpec) DeepCopyInto(out *DestinationProfileSpec) {
+	*out = *in
+}
+
+// DeepCopy creates a new DestinationProfileSpec.
+func (in *DestinationProfileSpec) DeepCopy() *DestinationProfileSpec {
+	if in == nil {
+		return nil
+	}
+	out := new(DestinationProfileSpec)
 	in.DeepCopyInto(out)
 	return out
 }

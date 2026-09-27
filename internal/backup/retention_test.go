@@ -11,8 +11,8 @@ import (
 
 func TestObjectKey(t *testing.T) {
 	at := time.Date(2026, 9, 25, 12, 0, 0, 0, time.UTC)
-	got := backup.ObjectKey("default", "shop-db-backup", "postgres", "dump.gz", at)
-	want := "default/shop-db-backup/postgres-20260925T120000Z.dump.gz"
+	got := backup.ObjectKey("default", "shop-db-backup", "full", "postgres", "dump.gz", at)
+	want := "default/shop-db-backup/full/postgres-20260925T120000Z.dump.gz"
 	if got != want {
 		t.Fatalf("ObjectKey = %q, want %q", got, want)
 	}

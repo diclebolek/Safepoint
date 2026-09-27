@@ -10,13 +10,13 @@ metadata:
   name: backup-operator
 rules:
   - apiGroups: ["backup.goproject.io"]
-    resources: ["backupschedules", "backuprestores"]
+    resources: ["backupschedules", "backuprestores", "destinationprofiles"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["backup.goproject.io"]
-    resources: ["backupschedules/status", "backuprestores/status"]
+    resources: ["backupschedules/status", "backuprestores/status", "destinationprofiles/status"]
     verbs: ["get", "update", "patch"]
   - apiGroups: ["backup.goproject.io"]
-    resources: ["backupschedules/finalizers", "backuprestores/finalizers"]
+    resources: ["backupschedules/finalizers", "backuprestores/finalizers", "destinationprofiles/finalizers"]
     verbs: ["update"]
   - apiGroups: [""]
     resources: ["secrets"]

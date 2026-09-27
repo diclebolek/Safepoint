@@ -36,7 +36,7 @@ spec:
             metadata: { type: object }
             spec:
               type: object
-              required: [secretRef, objectKey, destination]
+              required: [secretRef, objectKey]
               properties:
                 engine:
                   type: string
@@ -54,6 +54,7 @@ spec:
                   properties:
                     enabled: { type: boolean }
                     secretRef: { type: string }
+                destinationRef: { type: string }
                 destination:
                   type: object
                   required: [endpoint, bucket, credentialsSecretRef]

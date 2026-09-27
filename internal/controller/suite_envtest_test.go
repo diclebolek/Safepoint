@@ -72,7 +72,7 @@ func TestEnvtestBackupScheduleSmoke(t *testing.T) {
 			DatabaseRef: "db",
 			SecretRef:   "sec",
 			Schedule:    "0 * * * *",
-			Destination: backupv1.ObjectStorageSpec{
+			Destination: &backupv1.ObjectStorageSpec{
 				Endpoint: "minio:9000", Bucket: "b", CredentialsSecretRef: "s3",
 			},
 		},

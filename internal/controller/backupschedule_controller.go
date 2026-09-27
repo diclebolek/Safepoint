@@ -1,4 +1,4 @@
-﻿package controller
+package controller
 
 import (
 	"context"
@@ -203,6 +203,11 @@ func (r *BackupScheduleReconciler) observeRunningJob(
 			s.Status.NextBackupTime = &metav1.Time{Time: next}
 			s.Status.LastObjectKey = result.ObjectKey
 			s.Status.LastJobName = result.JobName
+			s.Status.LastBackupMode = result.Mode
+			s.Status.ParentObjectKey = result.ParentObjectKey
+			if result.Mode == backupv1.BackupModeFull || result.Mode == "" {
+				s.Status.LastFullObjectKey = result.ObjectKey
+			}
 			s.Status.ObservedGeneration = s.Generation
 		})
 		if statusErr != nil {
@@ -296,7 +301,11 @@ func (r *BackupScheduleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // DefaultStoreFor builds a MinIO store from the schedule destination + secret.
 func DefaultStoreFor(c client.Client) func(context.Context, *backupv1.BackupSchedule) (storage.ObjectStore, error) {
 	return func(ctx context.Context, schedule *backupv1.BackupSchedule) (storage.ObjectStore, error) {
-		data, err := ReadSecretData(ctx, c, schedule.Namespace, schedule.Spec.Destination.CredentialsSecretRef)
+		dest, err := backup.ResolveDestination(ctx, c, schedule.Namespace, schedule.Spec.Destination, schedule.Spec.DestinationRef)
+		if err != nil {
+			return nil, err
+		}
+		data, err := ReadSecretData(ctx, c, schedule.Namespace, dest.CredentialsSecretRef)
 		if err != nil {
 			return nil, err
 		}
@@ -304,16 +313,16 @@ func DefaultStoreFor(c client.Client) func(context.Context, *backupv1.BackupSche
 		if err != nil {
 			return nil, err
 		}
-		region := schedule.Spec.Destination.Region
+		region := dest.Region
 		if region == "" {
 			region = "us-east-1"
 		}
 		return storage.NewMinIOStore(storage.Config{
-			Endpoint: schedule.Spec.Destination.Endpoint,
-			Bucket:   schedule.Spec.Destination.Bucket,
-			Prefix:   schedule.Spec.Destination.Prefix,
+			Endpoint: dest.Endpoint,
+			Bucket:   dest.Bucket,
+			Prefix:   dest.Prefix,
 			Region:   region,
-			UseSSL:   schedule.Spec.Destination.UseSSL,
+			UseSSL:   dest.UseSSL,
 			Creds: storage.Credentials{
 				AccessKey: accessKey,
 				SecretKey: secretKey,

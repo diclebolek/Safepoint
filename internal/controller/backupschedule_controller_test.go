@@ -66,7 +66,7 @@ func baseSchedule() *backupv1.BackupSchedule {
 			SecretRef:     "db-secret",
 			Schedule:      "0 * * * *",
 			RetentionDays: 7,
-			Destination: backupv1.ObjectStorageSpec{
+			Destination: &backupv1.ObjectStorageSpec{
 				Endpoint:             "minio:9000",
 				Bucket:               "db-backups",
 				CredentialsSecretRef: "minio-credentials",

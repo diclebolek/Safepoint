@@ -81,7 +81,11 @@ func (r *BackupRestoreReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return r.fail(ctx, &restore, err.Error())
 	}
-	storeSecret, err := ReadSecretData(ctx, r.Client, restore.Namespace, restore.Spec.Destination.CredentialsSecretRef)
+	dest, err := backup.ResolveDestination(ctx, r.Client, restore.Namespace, restore.Spec.Destination, restore.Spec.DestinationRef)
+	if err != nil {
+		return r.fail(ctx, &restore, err.Error())
+	}
+	storeSecret, err := ReadSecretData(ctx, r.Client, restore.Namespace, dest.CredentialsSecretRef)
 	if err != nil {
 		return r.fail(ctx, &restore, err.Error())
 	}
@@ -89,7 +93,7 @@ func (r *BackupRestoreReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return r.fail(ctx, &restore, err.Error())
 	}
-	region := restore.Spec.Destination.Region
+	region := dest.Region
 	if region == "" {
 		region = "us-east-1"
 	}
@@ -123,13 +127,13 @@ func (r *BackupRestoreReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		Target:    backup.ParseTargetSecret(dbSecret),
 		ObjectKey: restore.Spec.ObjectKey,
 		Storage: backup.StorageEnv{
-			Endpoint:  restore.Spec.Destination.Endpoint,
-			Bucket:    restore.Spec.Destination.Bucket,
-			Prefix:    restore.Spec.Destination.Prefix,
+			Endpoint:  dest.Endpoint,
+			Bucket:    dest.Bucket,
+			Prefix:    dest.Prefix,
 			Region:    region,
 			AccessKey: accessKey,
 			SecretKey: secretKey,
-			UseSSL:    restore.Spec.Destination.UseSSL,
+			UseSSL:    dest.UseSSL,
 		},
 		Encryption: enc,
 	})

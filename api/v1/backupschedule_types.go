@@ -51,8 +51,14 @@ type BackupScheduleSpec struct {
 	// +kubebuilder:default=7
 	RetentionDays int32 `json:"retentionDays,omitempty"`
 
-	// Destination describes the S3-compatible target (e.g. MinIO).
-	Destination ObjectStorageSpec `json:"destination"`
+	// Destination describes the S3-compatible target (inline).
+	// Exactly one of Destination or DestinationRef must be set.
+	// +optional
+	Destination *ObjectStorageSpec `json:"destination,omitempty"`
+
+	// DestinationRef references a DestinationProfile in the same namespace.
+	// +optional
+	DestinationRef string `json:"destinationRef,omitempty"`
 
 	// BackupImage overrides the default container image for the backup Job.
 	// +optional
@@ -71,7 +77,23 @@ type BackupScheduleSpec struct {
 	// Secret must contain key "password" (passphrase) or "key" (raw passphrase).
 	// +optional
 	Encryption *EncryptionSpec `json:"encryption,omitempty"`
+
+	// Mode selects full vs incremental chain-aware backups.
+	// Incremental runs promote to full when no prior successful full exists.
+	// +kubebuilder:default=full
+	// +kubebuilder:validation:Enum=full;incremental
+	// +optional
+	Mode BackupMode `json:"mode,omitempty"`
 }
+
+// BackupMode is full or incremental.
+// +kubebuilder:validation:Enum=full;incremental
+type BackupMode string
+
+const (
+	BackupModeFull         BackupMode = "full"
+	BackupModeIncremental  BackupMode = "incremental"
+)
 
 // EncryptionSpec enables client-side encryption of backup blobs.
 type EncryptionSpec struct {
@@ -107,6 +129,12 @@ type BackupScheduleStatus struct {
 	// +optional
 	LastObjectKey string `json:"lastObjectKey,omitempty"`
 	// +optional
+	LastFullObjectKey string `json:"lastFullObjectKey,omitempty"`
+	// +optional
+	LastBackupMode BackupMode `json:"lastBackupMode,omitempty"`
+	// +optional
+	ParentObjectKey string `json:"parentObjectKey,omitempty"`
+	// +optional
 	LastJobName string `json:"lastJobName,omitempty"`
 	// +optional
 	Message string `json:"message,omitempty"`
@@ -141,6 +169,14 @@ func (s *BackupSchedule) EffectiveEngine() DatabaseEngine {
 		return EnginePostgres
 	}
 	return s.Spec.Engine
+}
+
+// EffectiveMode returns backup mode, defaulting to full.
+func (s *BackupSchedule) EffectiveMode() BackupMode {
+	if s.Spec.Mode == "" {
+		return BackupModeFull
+	}
+	return s.Spec.Mode
 }
 
 // +kubebuilder:object:root=true

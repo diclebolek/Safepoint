@@ -31,7 +31,7 @@ func TestCreateJobBuildsPostgresJob(t *testing.T) {
 			DatabaseRef: "shop-postgres",
 			SecretRef:   "db-secret",
 			Schedule:    "0 * * * *",
-			Destination: backupv1.ObjectStorageSpec{
+			Destination: &backupv1.ObjectStorageSpec{
 				Endpoint:             "minio:9000",
 				Bucket:               "db-backups",
 				CredentialsSecretRef: "minio-secret",

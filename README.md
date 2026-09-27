@@ -658,8 +658,31 @@ GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), envtest, build
 
 ### Possible next features
 
-- Point-in-time / incremental backups (WAL / binlog based)  
-- Multi-cluster destination profiles  
+_(none — WAL-native PITR / binlog streaming can still deepen incremental mode)_
+
+### Destination profiles + incremental mode
+
+Reusable S3 destination:
+
+```yaml
+apiVersion: backup.goproject.io/v1
+kind: DestinationProfile
+metadata:
+  name: demo-minio
+  namespace: demo
+spec:
+  endpoint: minio.demo.svc.cluster.local:9000
+  bucket: db-backups
+  credentialsSecretRef: minio-credentials
+```
+
+```yaml
+spec:
+  destinationRef: demo-minio   # instead of inline destination
+  mode: incremental            # first success is full; later runs record parentObjectKey
+```
+
+Incremental mode still produces a restorable dump Job (same engines) and uploads a `.manifest.json` chain record. Status tracks `lastFullObjectKey` / `parentObjectKey`. Native WAL/binlog streaming PITR remains an optional hardening layer on top.
 
 ### Added in this release line
 
@@ -667,6 +690,8 @@ GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), envtest, build
 - Alertmanager rules for backup/restore failures (`config/demo/observability.yaml`)  
 - `kubectl safepoint` plugin (`cmd/kubectl-safepoint`)  
 - GHCR publish + cosign signing (`.github/workflows/release.yml`)  
+- `DestinationProfile` CRD (`destinationRef`) for shared S3 endpoints  
+- Incremental backup mode with chain metadata / manifests  
 
 ---
 

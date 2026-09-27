@@ -19,6 +19,8 @@ const (
 	LabelScheduleName   = "backup.goproject.io/schedule"
 	LabelEngine         = "backup.goproject.io/engine"
 	AnnotationObjectKey = "backup.goproject.io/object-key"
+	AnnotationMode      = "backup.goproject.io/mode"
+	AnnotationParentKey = "backup.goproject.io/parent-object-key"
 )
 
 // Target describes where and how to connect for a backup.
@@ -35,6 +37,8 @@ type JobRequest struct {
 	Schedule   *backupv1.BackupSchedule
 	Target     Target
 	ObjectKey  string
+	Mode       backupv1.BackupMode
+	ParentKey  string
 	Storage    StorageEnv
 	Encryption EncryptionEnv
 }
@@ -94,12 +98,16 @@ func (r *Registry) Get(name backupv1.DatabaseEngine) (Engine, error) {
 	return e, nil
 }
 
-// ObjectKey builds a deterministic object name including engine and compression suffix.
-func ObjectKey(namespace, scheduleName, engine, ext string, at time.Time) string {
+// ObjectKey builds a deterministic object name including mode, engine and suffix.
+func ObjectKey(namespace, scheduleName, mode, engine, ext string, at time.Time) string {
 	ext = strings.TrimPrefix(ext, ".")
-	return fmt.Sprintf("%s/%s/%s-%s.%s",
+	if mode == "" {
+		mode = "full"
+	}
+	return fmt.Sprintf("%s/%s/%s/%s-%s.%s",
 		namespace,
 		scheduleName,
+		mode,
 		engine,
 		at.UTC().Format("20060102T150405Z"),
 		ext,
@@ -173,6 +181,8 @@ func jobMeta(req JobRequest, engine Engine) metav1.ObjectMeta {
 		},
 		Annotations: map[string]string{
 			AnnotationObjectKey: req.ObjectKey,
+			AnnotationMode:      string(req.Mode),
+			AnnotationParentKey: req.ParentKey,
 		},
 	}
 }
@@ -245,6 +255,9 @@ func storageEnv(req JobRequest) []corev1.EnvVar {
 		{Name: "S3_SECRET_KEY", Value: req.Storage.SecretKey},
 		{Name: "S3_SCHEME", Value: scheme},
 		{Name: "OBJECT_KEY", Value: req.ObjectKey},
+		{Name: "BACKUP_MODE", Value: string(req.Mode)},
+		{Name: "PARENT_OBJECT_KEY", Value: req.ParentKey},
+		{Name: "ENGINE_NAME", Value: string(req.Schedule.EffectiveEngine())},
 	}
 	if req.Encryption.Enabled {
 		env = append(env,
@@ -300,4 +313,12 @@ else
   echo "upload failed: curl PUT and mc both unavailable/failed" >&2
   exit 1
 fi
+# Chain manifest for incremental / multi-destination tooling
+MANIFEST_PATH=/tmp/safepoint-manifest.json
+printf '{"mode":"%s","objectKey":"%s","parentObjectKey":"%s","engine":"%s"}\n' \
+  "${BACKUP_MODE:-full}" "${OBJECT_KEY}" "${PARENT_OBJECT_KEY:-}" "${ENGINE_NAME:-unknown}" > "${MANIFEST_PATH}"
+MANIFEST_KEY="${OBJECT_KEY}.manifest.json"
+curl -fsS -X PUT -H "Content-Type: application/json" --data-binary @"${MANIFEST_PATH}" \
+  "${S3_SCHEME}://${S3_ENDPOINT}/${S3_BUCKET}/${MANIFEST_KEY}" \
+  && echo "uploaded manifest ${MANIFEST_KEY}" || echo "manifest upload skipped/failed (non-fatal)"
 `
