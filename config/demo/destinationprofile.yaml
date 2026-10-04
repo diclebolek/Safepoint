@@ -1,0 +1,21 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Demo MinIO/SeaweedFS hedefini DestinationProfile olarak tanimlar.
+#   BackupSchedule / BackupRestore / WAL shipping ayni profili kullanabilir.
+#
+# Uygulama: kubectl apply -f config/demo/destinationprofile.yaml
+# =============================================================================
+
+apiVersion: backup.goproject.io/v1
+kind: DestinationProfile
+metadata:
+  name: demo-minio
+  namespace: demo
+  labels:
+    app.kubernetes.io/part-of: safepoint
+spec:
+  endpoint: minio.demo.svc.cluster.local:9000
+  bucket: db-backups
+  region: us-east-1
+  credentialsSecretRef: minio-credentials
+  useSSL: false

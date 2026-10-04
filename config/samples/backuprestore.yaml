@@ -16,11 +16,14 @@ spec:
   secretRef: shop-postgres-credentials
   # Fill from: kubectl -n demo get bks shop-db-backup -o jsonpath="{.status.lastObjectKey}{'\n'}"
   objectKey: REPLACE_WITH_LAST_OBJECT_KEY
-  destination:
-    endpoint: minio.demo.svc.cluster.local:9000
-    bucket: db-backups
-    credentialsSecretRef: minio-credentials
-    useSSL: false
+  # Prefer a shared DestinationProfile (see config/demo/destinationprofile.yaml)
+  destinationRef: demo-minio
+  # Or inline:
+  # destination:
+  #   endpoint: minio.demo.svc.cluster.local:9000
+  #   bucket: db-backups
+  #   credentialsSecretRef: minio-credentials
+  #   useSSL: false
   # If objectKey ends with .enc, set:
   # encryption:
   #   enabled: true

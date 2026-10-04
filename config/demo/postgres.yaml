@@ -52,6 +52,20 @@ spec:
       containers:
         - name: postgres
           image: postgres:16-alpine
+          args:
+            - postgres
+            - -c
+            - wal_level=replica
+            - -c
+            - max_wal_senders=5
+            - -c
+            - max_replication_slots=5
+            - -c
+            - hot_standby=on
+            - -c
+            - archive_mode=off
+            - -c
+            - hba_file=/etc/postgresql/pg_hba.conf
           env:
             - name: POSTGRES_PASSWORD
               valueFrom:
@@ -70,6 +84,11 @@ spec:
                   key: username
           ports:
             - containerPort: 5432
+          volumeMounts:
+            - name: pg-hba
+              mountPath: /etc/postgresql
+            - name: pg-init
+              mountPath: /docker-entrypoint-initdb.d
           resources:
             requests:
               cpu: 50m
@@ -77,6 +96,43 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+      volumes:
+        - name: pg-hba
+          configMap:
+            name: shop-postgres-hba
+        - name: pg-init
+          configMap:
+            name: shop-postgres-init
+---
+# Allow app + replication connections (demo only — open CIDR).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shop-postgres-hba
+  namespace: demo
+data:
+  pg_hba.conf: |
+    local   all             all                                     trust
+    host    all             all             0.0.0.0/0               scram-sha-256
+    host    all             all             ::/0                    scram-sha-256
+    host    replication     replicator      0.0.0.0/0               scram-sha-256
+    host    replication     replicator      ::/0                    scram-sha-256
+---
+# Creates replication role for pg_receivewal (runs only on first empty data dir).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shop-postgres-init
+  namespace: demo
+data:
+  01-replicator.sql: |
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'replicator') THEN
+        CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'replicator';
+      END IF;
+    END
+    $$;
 ---
 apiVersion: v1
 kind: Service

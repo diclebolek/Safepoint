@@ -225,13 +225,25 @@ The demo Service is still named `minio`, but the image is **SeaweedFS** (S3-comp
 ```powershell
 kubectl apply -f config/demo/minio.yaml
 kubectl apply -f config/demo/backupschedules.yaml
+kubectl apply -f config/demo/destinationprofile.yaml
 kubectl apply -f config/demo/postgres.yaml
 kubectl apply -f config/demo/redis.yaml
+kubectl apply -f config/demo/wal-shipping.yaml
 kubectl apply -f config/demo/grafana-dashboard-configmap.yaml
 kubectl apply -f config/demo/observability.yaml
 
 # Create the S3 bucket once
 kubectl -n demo exec deploy/minio -- sh -c "echo 's3.bucket.create -name db-backups' | weed shell -master=localhost:9333"
+```
+
+**WAL shipping (PITR path):** `config/demo/wal-shipping.yaml` runs a `pg_receivewal` DaemonSet that mirrors WAL into the `demo-minio` DestinationProfile bucket (`wal/shop-postgres/`). Details: [`docs/PITR.md`](docs/PITR.md).
+
+**Restore demo:**
+
+```powershell
+$key = kubectl -n demo get bks shop-db-backup -o jsonpath="{.status.lastObjectKey}"
+(Get-Content config\demo\backuprestore.yaml) -replace 'REPLACE_WITH_LAST_OBJECT_KEY',$key | kubectl apply -f -
+kubectl -n demo get bkr shop-db-restore -w
 ```
 
 ### 7) Verify
@@ -795,7 +807,8 @@ GitHub Actions (`.github/workflows/ci.yml`): vet, test (`-race`), envtest, build
 
 ### Possible next features
 
-- Continuous WAL shipping DaemonSet (`pg_receivewal`) wired to DestinationProfile  
+- [x] Continuous WAL shipping DaemonSet (`pg_receivewal`) wired to DestinationProfile (`config/demo/wal-shipping.yaml`)  
+- Retention already on `BackupSchedule.spec.retentionDays`; optional S3 lifecycle policies  
 
 ### Production hardening
 
@@ -839,17 +852,6 @@ Incremental mode still produces a restorable dump Job (same engines) and uploads
 - `DestinationProfile` CRD (`destinationRef`) for shared S3 endpoints  
 - Incremental backup mode with chain metadata / manifests  
 - Production hardening samples (`config/hardening/`) + PITR/LSN docs  
-
----
-
-## LinkedIn / demo screenshots
-
-Step-by-step capture guide: [`docs/DEMO_SCREENSHOTS.md`](docs/DEMO_SCREENSHOTS.md).
-
-Short TR caption:
-
-> Safepoint — Go ile yazdığım Kubernetes backup operator: CRD, admission webhook, multi-DB, S3, restore, Prometheus/Grafana.  
-> https://github.com/diclebolek/Safepoint
 
 ---
 

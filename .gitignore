@@ -16,3 +16,7 @@ config/webhook/certs/
 .DS_Store
 Thumbs.db
 
+
+# Local demo screenshots (do not publish)
+docs/screenshots/
+

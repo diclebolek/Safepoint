@@ -1,0 +1,174 @@
+# =============================================================================
+# Bu dosya ne ise yarar?
+#   Postgres WAL'larini surekli alan pg_receivewal DaemonSet + MinIO'ya yukleyen
+#   sidecar. DestinationProfile (demo-minio) ile ayni bucket/credentials'i kullanir.
+#
+# Onkosul:
+#   - config/demo/postgres.yaml (wal_level=replica + replicator kullanici)
+#   - config/demo/destinationprofile.yaml + minio-credentials Secret
+#   - db-backups bucket mevcut
+#
+# Uygulama:
+#   kubectl apply -f config/demo/destinationprofile.yaml
+#   kubectl apply -f config/demo/wal-shipping.yaml
+#   kubectl -n demo logs -l app=safepoint-wal-shipping -c pg-receivewal
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: safepoint-wal-shipping
+  namespace: demo
+  labels:
+    app: safepoint-wal-shipping
+data:
+  # Matches DestinationProfile/demo-minio (bucket + key prefix for WAL segments).
+  DESTINATION_PROFILE: demo-minio
+  S3_ENDPOINT: minio.demo.svc.cluster.local:9000
+  S3_BUCKET: db-backups
+  S3_PREFIX: wal/shop-postgres
+  S3_USE_SSL: "false"
+  SLOT_NAME: safepoint
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: shop-postgres-replicator
+  namespace: demo
+type: Opaque
+stringData:
+  username: replicator
+  password: replicator
+  database: postgres
+  host: shop-postgres.demo.svc.cluster.local
+  port: "5432"
+---
+# One pod per node (Docker Desktop = 1). Single-writer for the demo Postgres.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: safepoint-wal-shipping
+  namespace: demo
+  labels:
+    app: safepoint-wal-shipping
+  annotations:
+    backup.goproject.io/destination-profile: demo-minio
+    backup.goproject.io/database-name: shop-postgres
+spec:
+  selector:
+    matchLabels:
+      app: safepoint-wal-shipping
+  template:
+    metadata:
+      labels:
+        app: safepoint-wal-shipping
+      annotations:
+        backup.goproject.io/destination-profile: demo-minio
+    spec:
+      containers:
+        - name: pg-receivewal
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: shop-postgres-replicator
+                  key: host
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: shop-postgres-replicator
+                  key: port
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: shop-postgres-replicator
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shop-postgres-replicator
+                  key: password
+            - name: SLOT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: safepoint-wal-shipping
+                  key: SLOT_NAME
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              mkdir -p /wal
+              echo "waiting for postgres replication..."
+              until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER"; do sleep 2; done
+              # Create physical slot once (ignore if exists).
+              psql -d postgres -v ON_ERROR_STOP=0 -c "SELECT pg_create_physical_replication_slot('${SLOT_NAME}');" || true
+              echo "starting pg_receivewal slot=${SLOT_NAME}"
+              exec pg_receivewal -D /wal --slot="$SLOT_NAME" --verbose --no-loop
+          volumeMounts:
+            - name: wal
+              mountPath: /wal
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+        - name: s3-uploader
+          image: amazon/aws-cli:2.17.56
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: accessKey
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: secretKey
+            - name: AWS_DEFAULT_REGION
+              value: us-east-1
+            - name: S3_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: safepoint-wal-shipping
+                  key: S3_ENDPOINT
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: safepoint-wal-shipping
+                  key: S3_BUCKET
+            - name: S3_PREFIX
+              valueFrom:
+                configMapKeyRef:
+                  name: safepoint-wal-shipping
+                  key: S3_PREFIX
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              EP="http://${S3_ENDPOINT}"
+              echo "syncing /wal -> s3://${S3_BUCKET}/${S3_PREFIX} via ${EP} (DestinationProfile demo-minio)"
+              while true; do
+                if [ -n "$(ls -A /wal 2>/dev/null || true)" ]; then
+                  aws --endpoint-url="$EP" s3 sync /wal "s3://${S3_BUCKET}/${S3_PREFIX}/" --only-show-errors || true
+                fi
+                sleep 30
+              done
+          volumeMounts:
+            - name: wal
+              mountPath: /wal
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: wal
+          emptyDir: {}
